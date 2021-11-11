@@ -2,7 +2,7 @@ from datetime import datetime
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app import db
+from project import db
 
 
 class User(db.Model):
@@ -37,11 +37,8 @@ class User(db.Model):
 
     def __setattr__(self, name, value):
         if name == "password":
-            value = self.set_password(value)
+            value = generate_password_hash(value)
         super().__setattr__(name, value)
-
-    def set_password(self, password: str) -> str:
-        return generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password, password)
