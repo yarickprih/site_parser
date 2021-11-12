@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="text-center mt-3 d-flex justify-content-center">
+    <main class="form-signin">
+        <form method="post" action="{{ url_for('register') }}">
+            <h1 class="h3 mb-3 fw-normal">Register</h1>
+
+            <title>My Application</title>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+            </ul>
+            {% endif %}
+            {% endwith %}
+            <div class="form-floating">
+                <input type="text" class="form-control mb-3" id="floatingInput" placeholder="Username" name="username">
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control mb-3" id="floatingPassword" placeholder="Password"
+                    name="password">
+                <label for="floatingPassword">Password</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control mb-3" id="floatingPassword" placeholder="Confirm password"
+                    name="confirm">
+                <label for="floatingPassword">Password</label>
+            </div>
+
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Register</button>
+        </form>
+    </main>
+</div>
+{% endblock content %}
