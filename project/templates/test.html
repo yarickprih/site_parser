@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<ul class="col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+    {% for site in sites %}
+    <li>({{ site.id }}) {{site.title}} ({{ site.url }}) - {{ user.username }} ({{ site.scrapping_time }} ms)</li>
+    {% endfor %}
+</ul>
+{% endblock content %}

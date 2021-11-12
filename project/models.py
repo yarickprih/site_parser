@@ -5,7 +5,15 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from project import db
 
 
-class User(db.Model):
+class DBModelMixin:
+    def session_add(self) -> None:
+        db.session.add(self)
+
+    def session_commit(self) -> None:
+        db.session.commit()
+
+
+class User(db.Model, DBModelMixin):
     """Database User model"""
 
     __tablename__ = "users"

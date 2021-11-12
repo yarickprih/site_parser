@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<div class="text-center mt-3 d-flex justify-content-center">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div aria-live="polite" aria-atomic="true" style="position: relative; min-height: 200px;">
+        <div style="position: absolute; top: 0; right: 0;">
+            {% for category, message in messages %}
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong class="mr-auto">Bootstrap</strong>
+                    <small class="text-muted">just now</small>
+                    <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="toast-body">
+                    See? Just like this.
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endwith %}
+    <main class="form-signin">
+        <form method="post" action="{{ url_for('login') }}">
+            <h1 class="h3 mb-3 fw-normal">Login</h1>
+
+            <div class="form-floating">
+                <input type="text" class="form-control mb-3" id="floatingInput" placeholder="Username" name="username">
+                <label for="floatingInput">Username</label>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control mb-3" id="floatingPassword" placeholder="Password"
+                    name="password">
+                <label for="floatingPassword">Password</label>
+            </div>
+
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Login</button>
+        </form>
+    </main>
+</div>
+{% endblock content %}
