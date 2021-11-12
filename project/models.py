@@ -6,6 +6,8 @@ from project import db
 
 
 class User(db.Model):
+    """Database User model"""
+
     __tablename__ = "users"
 
     id = db.Column(
@@ -30,7 +32,12 @@ class User(db.Model):
         default=db.func.current_timestamp(),
         onupdate=db.func.current_timestamp(),
     )
-    sites = db.Column(db.ForeignKey("sites.id"))
+    sites = db.relationship(
+        "Site",
+        cascade="all,delete",
+        backref="user",
+        lazy=True,
+    )
 
     def __repr__(self) -> str:
         return str(self.__dict__)
@@ -41,10 +48,20 @@ class User(db.Model):
         super().__setattr__(name, value)
 
     def check_password(self, password: str) -> bool:
+        """Function to check if passed password matches instances password hash
+
+        Args:
+            password (str): password string
+
+        Returns:
+            bool: bool value indicating whether passed password matched password hash of not
+        """
         return check_password_hash(self.password, password)
 
 
 class Site(db.Model):
+    """Database Site model"""
+
     __tablename__ = "sites"
 
     id = db.Column(
@@ -52,10 +69,9 @@ class Site(db.Model):
         primary_key=True,
         autoincrement=True,
     )
-    user_id = db.relationship(
-        "User",
-        backref="site",
-        lazy=True,
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id"),
     )
     url = db.Column(
         db.String(255),

@@ -5,6 +5,11 @@ BASE_DIR = Path(__file__).parent
 
 
 def create_db_url() -> str:
+    """Function to generate database URL
+
+    Returns:
+        str: database URL string
+    """
     db_user = os.getenv("POSTGRES_USER")
     db_password = os.getenv("POSTGRES_PASSWORD")
     db_host = os.getenv("POSTGRES_HOST")
@@ -14,6 +19,8 @@ def create_db_url() -> str:
 
 
 class Config:
+    """Base app config class"""
+
     DEBUG = bool(os.getenv("DEBUG", "0"))
     SECRET_KEY = str(os.getenv("SECRET_KEY", "secret_key"))
     SQLALCHEMY_DATABASE_URI = create_db_url()
@@ -21,14 +28,15 @@ class Config:
 
 
 class ProductionConfig(Config):
-    pass
-
-
+    """Production config class (inherited from base config class)"""
+    DEBUG = False
 class DevelopmentConfig(Config):
+    """Development config class (inherited from base config class)"""
     DEBUG = True
 
 
 class TestingConfig(Config):
+    """Testing config class (inherited from base config class)"""
     TESTING = True
 
 
