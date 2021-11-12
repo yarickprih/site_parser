@@ -27,7 +27,7 @@ class User(db.Model):
         db.DateTime(timezone=True),
         default=db.func.current_timestamp(),
     )
-    modified_at = db.Column(
+    last_login = db.Column(
         db.DateTime,
         default=db.func.current_timestamp(),
         onupdate=db.func.current_timestamp(),

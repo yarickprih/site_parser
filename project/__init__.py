@@ -36,6 +36,9 @@ def initialize_extensions(app: Flask) -> Flask:
     db.init_app(app)
     ma.init_app(app)
     migrate.init_app(app, db)
-    from .models import Site, User
+    with app.app_context():
+        # Include our Routes
+        from . import routes
+        from .models import Site, User
 
     return app
