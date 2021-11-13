@@ -20,8 +20,15 @@
                     </ul>
 
                     <div class="text-end">
-                        <a class="btn btn-outline-light me-2" href="{{ url_for('login') }}">Login</a>
-                        <a class="btn btn-warning" href="{{ url_for('register') }}">Sign-up</a>
+                        <div class="d-flex align-items-center justify-content-center">
+                            {% if current_user.is_authenticated %}
+                            <p class="text-center">Hi, {{ current_user.username }}!</p>
+                            <a class="btn btn-warning" href="{{ url_for('logout') }}">Logout</a>
+                            {% else %}
+                            <a class="btn btn-outline-light me-2" href="{{ url_for('login') }}">Login</a>
+                            <a class="btn btn-warning" href="{{ url_for('register') }}">Sign-up</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from project import db
+from project import db, login
 
 
 class DBModelMixin:
@@ -13,7 +14,7 @@ class DBModelMixin:
         db.session.commit()
 
 
-class User(db.Model, DBModelMixin):
+class User(db.Model, UserMixin, DBModelMixin):
     """Database User model"""
 
     __tablename__ = "users"
@@ -65,6 +66,11 @@ class User(db.Model, DBModelMixin):
             bool: bool value indicating whether passed password matched password hash of not
         """
         return check_password_hash(self.password, password)
+
+
+@login.user_loader
+def load_user(id):
+    return User.query.get(int(id))
 
 
 class Site(db.Model):

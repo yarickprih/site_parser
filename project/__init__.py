@@ -1,15 +1,14 @@
 import os
 
 from flask import Flask
-from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-
+from flask_login import LoginManager
 from .config import config_map
 
-ma = Marshmallow()
 db = SQLAlchemy()
 migrate = Migrate()
+login = LoginManager()
 
 
 def create_app() -> Flask:
@@ -34,7 +33,8 @@ def initialize_extensions(app: Flask) -> Flask:
         Flask: Flask app instance with initialized extentions
     """
     db.init_app(app)
-    ma.init_app(app)
+    login.init_app(app)
+    login.login_view = "login"
     migrate.init_app(app, db)
     with app.app_context():
         # Include our Routes
