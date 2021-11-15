@@ -1,11 +1,10 @@
 .venv
 .vscode
 .git
-/**/__pycache__
+**/__pycache__
 .gitignore
 docker-compose.yml
 Dockerfile
 Makefile
 migrations
-requirements.txt
 .dockerignore
