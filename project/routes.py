@@ -47,8 +47,7 @@ def register():
     if request.method == "POST" and form.validate():
         try:
             user = User(username=form.username.data, password=form.password.data)
-            user.session_add()
-            user.session_commit()
+            user.commit_to_db()
         except IntegrityError:
             flash(
                 f"User with username '{user.username}' already registered!",

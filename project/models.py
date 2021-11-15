@@ -7,12 +7,9 @@ from project import db, login
 
 
 class DBModelMixin:
-    def session_add(self) -> None:
+    def commit_to_db(self) -> None:
         db.session.add(self)
-
-    def session_commit(self) -> None:
         db.session.commit()
-
 
 class User(db.Model, UserMixin, DBModelMixin):
     """Database User model"""
@@ -73,7 +70,7 @@ def load_user(id):
     return User.query.get(int(id))
 
 
-class Site(db.Model):
+class Site(db.Model, DBModelMixin):
     """Database Site model"""
 
     __tablename__ = "sites"

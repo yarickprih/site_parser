@@ -1,8 +1,9 @@
-from werkzeug.utils import validate_arguments
 from wtforms import Form, PasswordField, StringField, validators
 
 
 class RegistrationForm(Form):
+    """WTForms User registration form"""
+
     username = StringField(
         "Username",
         [
@@ -21,7 +22,7 @@ class RegistrationForm(Form):
         ],
     )
     confirm = PasswordField(
-        "Repeat Password",
+        "Confirm Password",
         [
             validators.DataRequired(),
             validators.InputRequired(),
@@ -30,6 +31,8 @@ class RegistrationForm(Form):
 
 
 class LoginForm(Form):
+    """WTForms User login form"""
+
     username = StringField(
         "Username",
         [
