@@ -1,9 +1,10 @@
 import os
 
 from flask import Flask
+from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+
 from .config import config_map
 
 db = SQLAlchemy()
@@ -12,7 +13,7 @@ login = LoginManager()
 
 
 def create_app() -> Flask:
-    """Flask app factory
+    """Create Flask app factory.
 
     Returns:
         Flask: initialized Flask application with all extentions connected and config set
@@ -24,7 +25,7 @@ def create_app() -> Flask:
 
 
 def initialize_extensions(app: Flask) -> Flask:
-    """This function initializes extentions
+    """Initialize application extentions.
 
     Args:
         app (Flask): Flask app instance
@@ -37,7 +38,6 @@ def initialize_extensions(app: Flask) -> Flask:
     login.login_view = "login"
     migrate.init_app(app, db)
     with app.app_context():
-        # Include our Routes
         from . import routes
         from .models import Site, User
 

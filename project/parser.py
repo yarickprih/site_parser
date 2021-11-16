@@ -37,7 +37,7 @@ HEADERS = {
 
 
 def parse_links() -> NoReturn:
-    """This function parses links from WEBSITES_LIST_URL and writes in to the file
+    """Parse links from WEBSITES_LIST_URL and writes in to the file.
 
     Returns:
         NoReturn: NoReturn
@@ -53,7 +53,7 @@ def parse_links() -> NoReturn:
 async def fetch(
     session: aiohttp.ClientSession, url: str
 ) -> Tuple[str, Callable[[int], Awaitable[str]], time.time]:
-    """This function makes an asynchronous request on given URL
+    """Make an asynchronous request on given URL.
 
     Args:
         session (aiohttp.ClientSession): aiohttp Session
@@ -76,8 +76,8 @@ async def fetch(
 
 
 async def crawl() -> List[Callable[[int], Awaitable[str]]]:
-    """This function fetches links from text file with fetch() function
-    and returns a list of asyncio coroutines
+    """Fetch links from text file with fetch()
+    function and returns a list of asyncio coroutines.
 
     Returns:
         List[Callable[[int], Awaitable[str]]]: List of coroutines
@@ -92,7 +92,7 @@ async def crawl() -> List[Callable[[int], Awaitable[str]]]:
 
 
 def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
-    """This function create a SQLAlchemy Site model instance with passed arguments
+    """Create a SQLAlchemy Site model instance with passed arguments.
 
     Args:
         user (User): SQLAlchemy User model instance
@@ -114,7 +114,7 @@ def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
 
 @create_file_in_not_exists(parse_links)
 def create_site_list(user: User) -> List[Site]:
-    """This function creates a list of SQLAlchemy Site model instances
+    """Create a list of SQLAlchemy Site model instances.
 
     Args:
         user (User): SQLAlchemy User model instance

@@ -16,8 +16,9 @@ fake = Faker()
 
 
 def create_xml_report(urls: List[Site]) -> str:
-    """This function takes a list of Site database model instances
-    and creates an XML report file with info on every Site.
+    """Create an XML report file.
+
+    Creates an XML report file with info on a list of Site database model instances
 
     Args:
         urls (List[Site]): List of Site database model instances
@@ -32,7 +33,7 @@ def create_xml_report(urls: List[Site]) -> str:
         root.append(link)
 
         title = ET.SubElement(link, "title")
-        link = ET.SubElement(link, "link")
+        url = ET.SubElement(link, "url")
         user = ET.SubElement(link, "user")
         scrapping_time = ET.SubElement(link, "scrapping_time")
         date = ET.SubElement(link, "date")
@@ -54,7 +55,7 @@ def create_xml_report(urls: List[Site]) -> str:
 
 
 def create_fake_user(n: int = 1) -> Union[User, List[User]]:
-    """This function generates SQLAlchemy User model instance with fake data
+    """Generate SQLAlchemy User model instance with fake data.
 
     Args:
         n (int, optional): number of instances to create. Defaults to 1.
@@ -72,7 +73,7 @@ def create_fake_user(n: int = 1) -> Union[User, List[User]]:
 def create_fake_site(
     users: Union[User, List[User]], n: int = 1
 ) -> Union[Site, List[Site]]:
-    """This function generates SQLAlchemy User model instance with fake data
+    """Generate SQLAlchemy User model instance with fake data.
 
     Args:
         user (User): SQLAlchemy User model instance
@@ -117,8 +118,10 @@ def create_fake_site(
 
 
 def create_file_in_not_exists(func: Callable) -> Callable:
-    """This decorator checks if LINKS_FILE exists or not empty
-    if it is - creates a new file
+    """Check if LINKS_FILE exists or not empty.
+
+    Decorator to check if LINKS_FILE exists or not empty to.
+    If it is - calls the function that creates a new LINKS_FILE.
 
     Args:
         func (Callable): function that creates LINKS_FILE

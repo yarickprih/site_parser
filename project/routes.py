@@ -21,19 +21,33 @@ from .utils import create_xml_report
 @app.route("/")
 @login_required
 def index():
-    user = current_user
-    sites = Site.query.filter_by(user_id=user.id)
+    """Index application route.
+
+    It includes 'sites' context variable which consists Site DB records filtered by current user.
+
+    Returns:
+        Template with given context
+    """
+    sites = Site.query.filter_by(user_id=current_user.id)
     return render_template(
         "index.html",
         title="Home Page",
-        sites=sites if len(sites.all()) else None,
-        user=user,
+        sites=sites.all() or None,
+        user=current_user,
     )
 
 
 @app.route("/download")
 @login_required
 def download():
+    """Download XML report route.
+
+    Generates an XML report on list of parsed sites
+    and creates an XML report file as an attachment.
+
+    Returns:
+        Redirect to 'index' route, XML report file.
+    """
     sites = Site.query.all()
     file_name = create_xml_report(sites)
     return send_from_directory(
@@ -69,7 +83,7 @@ def login():
                 f"User with username '{form.username.data}' doesn't exists!",
                 category="danger",
             )
-            return render_template("login.html", title="Login Page", **request.form)
+            return render_template("login.html", title="Login Page", form=form)
         if user.check_password(form.password.data):
             login_user(user)
             flash(

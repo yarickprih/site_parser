@@ -6,7 +6,7 @@ BASE_DIR = PROJECT_DIR.parent
 
 
 def create_db_url() -> str:
-    """Function to generate database URL
+    """Generate database URL.
 
     Returns:
         str: database URL string
@@ -20,7 +20,7 @@ def create_db_url() -> str:
 
 
 class Config:
-    """Base app config class"""
+    """Base app config class."""
 
     DEBUG = bool(os.getenv("DEBUG", "0"))
     SECRET_KEY = str(os.getenv("SECRET_KEY", "secret_key"))

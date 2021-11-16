@@ -2,7 +2,7 @@ from wtforms import Form, PasswordField, StringField, validators
 
 
 class RegistrationForm(Form):
-    """WTForms User registration form"""
+    """WTForms User registration form."""
 
     username = StringField(
         "Username",
@@ -31,7 +31,7 @@ class RegistrationForm(Form):
 
 
 class LoginForm(Form):
-    """WTForms User login form"""
+    """WTForms User login form."""
 
     username = StringField(
         "Username",

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import NoReturn
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -7,13 +8,15 @@ from project import db, login
 
 
 class DBModelMixin:
-    def commit_to_db(self) -> None:
+    """Mixin class implementing logic of adding entity to db and committing changes."""
+
+    def commit_to_db(self) -> NoReturn:
         db.session.add(self)
         db.session.commit()
 
 
 class User(db.Model, UserMixin, DBModelMixin):
-    """Database User model"""
+    """Database User model."""
 
     __tablename__ = "users"
 
@@ -48,7 +51,11 @@ class User(db.Model, UserMixin, DBModelMixin):
 
     def __repr__(self) -> str:
         return str(
-            {key: value for key, value in self.__dict__.items() if not key.startswith("_")}
+            {
+                key: value
+                for key, value in self.__dict__.items()
+                if not key.startswith("_")
+            }
         )
 
     def __setattr__(self, name, value):
@@ -57,7 +64,7 @@ class User(db.Model, UserMixin, DBModelMixin):
         super().__setattr__(name, value)
 
     def check_password(self, password: str) -> bool:
-        """Function to check if passed password matches instances password hash
+        """Check if passed password matches instances password hash.
 
         Args:
             password (str): password string
@@ -74,7 +81,7 @@ def load_user(id):
 
 
 class Site(db.Model, DBModelMixin):
-    """Database Site model"""
+    """Database Site model."""
 
     __tablename__ = "sites"
 
@@ -90,12 +97,10 @@ class Site(db.Model, DBModelMixin):
     url = db.Column(
         db.String(255),
         nullable=False,
-        unique=True,
     )
     title = db.Column(
         db.String(255),
         nullable=False,
-        unique=True,
     )
     created_at = db.Column(
         db.DateTime(timezone=True),
@@ -105,4 +110,8 @@ class Site(db.Model, DBModelMixin):
     scrapping_time = db.Column(
         db.Integer,
         nullable=False,
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "title", "url"),
     )
