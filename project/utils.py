@@ -3,7 +3,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from functools import wraps
 from pathlib import Path
-from typing import Callable, List
+from typing import Any, Callable, List, Union
 from xml.dom import minidom
 
 from faker import Faker
@@ -53,19 +53,25 @@ def create_xml_report(urls: List[Site]) -> str:
     return file_name
 
 
-def create_fake_user() -> User:
+def create_fake_user(n: int = 1) -> Union[User, List[User]]:
     """This function generates SQLAlchemy User model instance with fake data
 
+    Args:
+        n (int, optional): number of instances to create. Defaults to 1.
+
     Returns:
-        User: SQLAlchemy User model instance
+        Union[User, List[User]]: SQLAlchemy User model instance or list of User model instances
     """
-    return User(
+    user = User(
         username=fake.simple_profile()["username"],
         password=fake.password(length=12),
     )
+    return [user for _ in range(n)] if n > 1 else user
 
 
-def create_fake_site(user: User) -> Site:
+def create_fake_site(
+    users: Union[User, List[User]], n: int = 1
+) -> Union[Site, List[Site]]:
     """This function generates SQLAlchemy User model instance with fake data
 
     Args:
@@ -73,9 +79,37 @@ def create_fake_site(user: User) -> Site:
 
     Returns:
         Site: SQLAlchemy Site model instance
+
+    Args:
+        users (Union[User, List[User]]): SQLAlchemy User model instance or list of SQLAlchemy User model instances
+        n (int, optional): number of instances to create. Defaults to 1.
+
+    Returns:
+        Union[Site, List[Site]]: SQLAlchemy Site model instance or list of Site model instances
     """
+    if isinstance(users, User) and n > 1:
+        return [
+            Site(
+                user=users,
+                url=fake.url(),
+                title=" ".join(fake.words(nb=random.randint(1, 10))),
+                scrapping_time=random.randint(0, 10000),
+            )
+            for _ in range(n)
+        ]
+    elif isinstance(users, list):
+        return [
+            Site(
+                user=user,
+                url=fake.url(),
+                title=" ".join(fake.words(nb=random.randint(1, 10))),
+                scrapping_time=random.randint(0, 10000),
+            )
+            for _ in range(n)
+            for user in users
+        ]
     return Site(
-        user=user,
+        user=users,
         url=fake.url(),
         title=" ".join(fake.words(nb=random.randint(1, 10))),
         scrapping_time=random.randint(0, 10000),
@@ -93,9 +127,9 @@ def create_file_in_not_exists(func: Callable) -> Callable:
         Callable: decorated function
     """
 
-    def decorator(f: Callable):
+    def decorator(f: Callable) -> Callable:
         @wraps(f)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> Any:
             if (
                 not app.config["LINKS_FILE"].exists()
                 or app.config["LINKS_FILE"].stat().st_size == 0
