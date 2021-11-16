@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 
-BASE_DIR = Path(__file__).parent
+PROJECT_DIR = Path(__file__).resolve().parent
+BASE_DIR = PROJECT_DIR.parent
 
 
 def create_db_url() -> str:
@@ -25,6 +26,8 @@ class Config:
     SECRET_KEY = str(os.getenv("SECRET_KEY", "secret_key"))
     SQLALCHEMY_DATABASE_URI = create_db_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    FILES_DIR = PROJECT_DIR / "files"
+    LINKS_FILE = BASE_DIR / "links.txt"
 
 
 class ProductionConfig(Config):
