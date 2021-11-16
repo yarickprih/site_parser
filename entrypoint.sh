@@ -11,12 +11,17 @@ then
     echo "PostgreSQL started"
 fi
 
-if [ ! -d "migrations" ] 
+if [ ! -d "migrations" ]
 then
+    echo "\nInitiating migrations setup..."
     flask db init
+    echo "Migrations folder created"
 fi
 
+echo "\nRunning migrations"
 flask db migrate
+
+echo "\nRolling database migrations"
 flask db upgrade
 
 exec "$@"

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+<div class="col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+  {% if sites %}
+  <a href="{{ url_for('download') }}" class="btn btn-success text-end my-3">Download file</a>
+  <div class="my-3 table-responsive">
+
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Title</th>
+          <th scope="col">User</th>
+          <th scope="col">Time to fetch</th>
+          <th scope="col">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for site in sites %}
+        <tr>
+          <th scope="row">{{ site.id }}</th>
+          <td><a href="{{ site.url }}">{{ site.title }}</a></td>
+          <td>{{ user.username }}</td>
+          <td>{{ site.scrapping_time }}</td>
+          <td>{{ site.created_at }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+  {% else %}
+  <h4 class="mt-3 text-center">No site in database yet(</h4>
+  {% endif %}
+</div>
+{% endblock content %}

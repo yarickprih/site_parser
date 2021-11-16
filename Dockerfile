@@ -7,12 +7,13 @@ ENV APP_HOME=/home/app/web
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
+RUN addgroup --system flask_app && adduser --system --group flask_user
+
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y netcat
 
-RUN addgroup --system flask_app && adduser --system --group flask_user
 
 RUN pip install --upgrade pip
 COPY ./requirements.dev.txt $APP_HOME/requirements.txt

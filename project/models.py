@@ -11,6 +11,7 @@ class DBModelMixin:
         db.session.add(self)
         db.session.commit()
 
+
 class User(db.Model, UserMixin, DBModelMixin):
     """Database User model"""
 
@@ -46,7 +47,9 @@ class User(db.Model, UserMixin, DBModelMixin):
     )
 
     def __repr__(self) -> str:
-        return str(self.__dict__)
+        return str(
+            {key: value for key, value in self.__dict__.items() if not key.startswith("_")}
+        )
 
     def __setattr__(self, name, value):
         if name == "password":
