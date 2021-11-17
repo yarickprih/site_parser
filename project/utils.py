@@ -33,16 +33,16 @@ def create_xml_report(urls: List[Site]) -> str:
         root.append(link)
 
         title = ET.SubElement(link, "title")
-        url = ET.SubElement(link, "url")
+        url_str = ET.SubElement(link, "url")
         user = ET.SubElement(link, "user")
         scrapping_time = ET.SubElement(link, "scrapping_time")
         date = ET.SubElement(link, "date")
 
         title.text = url.title
-        link.text = url.url
+        url_str.text = url.url
         user.text = url.user.username
         scrapping_time.text = str(url.scrapping_time)
-        date.text = str(url.created_at)
+        date.text = url.created_at.strftime("%B %d %Y")
 
     tree = minidom.parseString(ET.tostring(root)).toprettyxml(indent=" " * 4)
     save_path = Path(Config.FILES_DIR)
@@ -70,51 +70,23 @@ def create_fake_user(n: int = 1) -> Union[User, List[User]]:
     return [user for _ in range(n)] if n > 1 else user
 
 
-def create_fake_site(
-    users: Union[User, List[User]], n: int = 1
-) -> Union[Site, List[Site]]:
+def create_fake_site(user: User, n: int = 1) -> Union[Site, List[Site]]:
     """Generate SQLAlchemy User model instance with fake data.
 
     Args:
         user (User): SQLAlchemy User model instance
-
-    Returns:
-        Site: SQLAlchemy Site model instance
-
-    Args:
-        users (Union[User, List[User]]): SQLAlchemy User model instance or list of SQLAlchemy User model instances
         n (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
         Union[Site, List[Site]]: SQLAlchemy Site model instance or list of Site model instances
     """
-    if isinstance(users, User) and n > 1:
-        return [
-            Site(
-                user=users,
-                url=fake.url(),
-                title=" ".join(fake.words(nb=random.randint(1, 10))),
-                scrapping_time=random.randint(0, 10000),
-            )
-            for _ in range(n)
-        ]
-    elif isinstance(users, list):
-        return [
-            Site(
-                user=user,
-                url=fake.url(),
-                title=" ".join(fake.words(nb=random.randint(1, 10))),
-                scrapping_time=random.randint(0, 10000),
-            )
-            for _ in range(n)
-            for user in users
-        ]
-    return Site(
-        user=users,
+    site = Site(
+        user=user,
         url=fake.url(),
         title=" ".join(fake.words(nb=random.randint(1, 10))),
         scrapping_time=random.randint(0, 10000),
     )
+    return [site for _ in range(n)] if n > 1 else site
 
 
 def create_file_in_not_exists(func: Callable) -> Callable:

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import current_app as app
 from flask import (
     flash,
@@ -23,16 +25,38 @@ from .utils import create_xml_report
 def index():
     """Index application route.
 
-    It includes 'sites' context variable which consists Site DB records filtered by current user.
+    It includes 'sites' context variable which consists Site DB records.
 
     Returns:
         Template with given context
     """
-    sites = Site.query.filter_by(user_id=current_user.id)
+    sites = Site.query.all()
     return render_template(
         "index.html",
         title="Home Page",
-        sites=sites.all() or None,
+        sites=sites or None,
+        user=current_user,
+    )
+
+
+@app.route("/<user_name>")
+@login_required
+def links_user_specific(user_name: str):
+    """Sites filtered by current user.
+
+    It includes 'sites' context variable which consists Site DB records filtered by current user.
+
+    Args:
+        user_name (str): current user username
+
+    Returns:
+        Template with given context
+    """
+    sites = Site.query.filter_by(user=current_user).all()
+    return render_template(
+        "links_list.html",
+        title="Parsed Links",
+        sites=sites or None,
         user=current_user,
     )
 
@@ -60,12 +84,10 @@ def download():
 @app.route("/parse")
 @login_required
 def parse_links():
-    sites = create_site_list(current_user)
-    for site in sites:
-        try:
-            db.session.add(site)
-        except IntegrityError:
-            continue
+    sites = list(create_site_list(current_user))
+    db.session.flush(Site.query.all())
+    Site.query.filter_by(user=current_user).merge_result(sites, load=False)
+
     db.session.commit()
     flash("Sites have been added successfully!", category="success")
     return redirect(url_for("index"))

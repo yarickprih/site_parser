@@ -99,7 +99,7 @@ class Site(db.Model, DBModelMixin):
         nullable=False,
     )
     title = db.Column(
-        db.String(255),
+        db.Text,
         nullable=False,
     )
     created_at = db.Column(
@@ -112,6 +112,3 @@ class Site(db.Model, DBModelMixin):
         nullable=False,
     )
 
-    __table_args__ = (
-        db.UniqueConstraint("user_id", "title", "url"),
-    )

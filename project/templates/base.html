@@ -15,10 +15,14 @@
         <header class="p-3 bg-dark text-white">
             <div class="container">
                 <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                    {% if current_user.is_authenticated %}
                     <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
                         <li><a href="{{ url_for('index') }}" class="nav-link px-2">Home</a></li>
+                        <li><a href="{{ url_for('links_user_specific', user_name=user.username) }}"
+                                class="nav-link px-2">{{ user.username }} sites</a></li>
                         <li><a href="{{ url_for('parse_links') }}" class="nav-link px-2">Parse links</a></li>
                     </ul>
+                    {% endif %}
                     <div class="d-flex flex-row align-items-center justify-content-center">
                         {% if current_user.is_authenticated %}
                         <p class="my-0 mx-3">Hi, {{ current_user.username }}!</p>

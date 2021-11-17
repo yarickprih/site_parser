@@ -11,7 +11,8 @@ from flask import current_app as app
 from .models import Site, User
 from .utils import create_file_in_not_exists
 
-WEBSITES_LIST_URL = "https://www.sitebuilderreport.com/inspiration/blog-examples"
+WEBSITES_LIST_URL = "https://blog.feedspot.com/world_news_blogs/"
+# WEBSITES_LIST_URL = "https://www.sitebuilderreport.com/inspiration/blog-examples"
 user_agents = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36",
@@ -35,6 +36,8 @@ HEADERS = {
     "accept-language": "en-US,en;q=0.9",
 }
 
+# URL = namedtuple("URL", ["user", "url", "title", "scrapping_time"])
+
 
 def parse_links() -> NoReturn:
     """Parse links from WEBSITES_LIST_URL and writes in to the file.
@@ -42,7 +45,7 @@ def parse_links() -> NoReturn:
     Returns:
         NoReturn: NoReturn
     """
-    selector = "div.sticky-bar > div > h2 > a"
+    selector = "a.ext"
     response = requests.get(WEBSITES_LIST_URL, headers=HEADERS)
     soup = BeautifulSoup(response.content, "lxml")
     with open(app.config["LINKS_FILE"], "a") as file:
@@ -82,7 +85,7 @@ async def crawl() -> List[Callable[[int], Awaitable[str]]]:
     Returns:
         List[Callable[[int], Awaitable[str]]]: List of coroutines
     """
-    async with aiohttp.ClientSession(trust_env=True) as session:
+    async with aiohttp.ClientSession() as session:
         tasks = []
         with open(app.config["LINKS_FILE"], "r") as file:
             for url in file.readlines():
@@ -92,7 +95,7 @@ async def crawl() -> List[Callable[[int], Awaitable[str]]]:
 
 
 def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
-    """Create a SQLAlchemy Site model instance with passed arguments.
+    """Create a URL instance with passed arguments.
 
     Args:
         user (User): SQLAlchemy User model instance
@@ -101,13 +104,17 @@ def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
         time_ (time.time): Time in took to make a request
 
     Returns:
-        Site: SQLAlchemy Site model instance
+        URL: URL namedtuple instance
     """
     soup = BeautifulSoup(data, "lxml")
+    try:
+        title = soup.select_one("title").text.strip()
+    except AttributeError:
+        title = "Unknown title"
     return Site(
         user=user,
         url=url[:-1],
-        title=soup.select_one("title").text.strip(),
+        title=title,
         scrapping_time=int(time_ * 1000),
     )
 
@@ -126,10 +133,5 @@ def create_site_list(user: User) -> List[Site]:
     asyncio.set_event_loop(loop)
     data = loop.run_until_complete(crawl())
     loop.close()
-    sites = []
     for url, item, time_ in data:
-        try:
-            sites.append(create_site(user, url, item, time_))
-        except Exception:
-            continue
-    return sites
+        yield create_site(user, url, item, time_)
