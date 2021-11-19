@@ -1,7 +1,9 @@
-from wtforms import Form, PasswordField, StringField, validators
+from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField, FileRequired
+from wtforms import FileField, Form, PasswordField, StringField, validators
 
 
-class RegistrationForm(Form):
+class RegistrationForm(FlaskForm):
     """WTForms User registration form."""
 
     username = StringField(
@@ -30,7 +32,7 @@ class RegistrationForm(Form):
     )
 
 
-class LoginForm(Form):
+class LoginForm(FlaskForm):
     """WTForms User login form."""
 
     username = StringField(
@@ -46,5 +48,15 @@ class LoginForm(Form):
         [
             validators.DataRequired(),
             validators.InputRequired(),
+        ],
+    )
+
+
+class FileUploadForm(FlaskForm):
+    document = FileField(
+        "Document",
+        validators=[
+            FileRequired(),
+            FileAllowed(["txt"], "TXT files only!"),
         ],
     )

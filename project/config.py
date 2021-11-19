@@ -24,10 +24,12 @@ class Config:
 
     DEBUG = bool(os.getenv("DEBUG", "0"))
     SECRET_KEY = str(os.getenv("SECRET_KEY", "secret_key"))
+    MAX_CONTENT_LENGTH = 4 * 1024 * 1024
     SQLALCHEMY_DATABASE_URI = create_db_url()
     SQLALCHEMY_TRACK_MODIFICATIONS = True
     FILES_DIR = PROJECT_DIR / "files"
     LINKS_FILE = BASE_DIR / "links.txt"
+    UPLOADS = BASE_DIR / "uploads"
 
 
 class ProductionConfig(Config):

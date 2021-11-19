@@ -4,12 +4,14 @@ from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 
 from .config import config_map
 
 db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
+csrf = CSRFProtect()
 
 
 def create_app() -> Flask:
@@ -36,6 +38,7 @@ def initialize_extensions(app: Flask) -> Flask:
     db.init_app(app)
     login.init_app(app)
     login.login_view = "login"
+    csrf.init_app(app)
     migrate.init_app(app, db)
     with app.app_context():
         from . import routes

@@ -3,3 +3,6 @@
 migrations
 **/__pycache__/
 .vscode
+*.txt
+!requirements.txt
+!requirements.dev.txt

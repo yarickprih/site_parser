@@ -1,4 +1,4 @@
-from datetime import datetime
+from pathlib import Path, PosixPath
 
 from flask import current_app as app
 from flask import (
@@ -11,13 +11,14 @@ from flask import (
 )
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
+from werkzeug.utils import secure_filename
 
 from project import db
 
-from .forms import LoginForm, RegistrationForm
+from .forms import FileUploadForm, LoginForm, RegistrationForm
 from .models import Site, User
 from .parser import create_site_list
-from .utils import create_xml_report
+from .utils import create_xml_report, get_user_uploads_folder
 
 
 @app.route("/")
@@ -81,10 +82,41 @@ def download():
     )
 
 
-@app.route("/parse")
+@app.route("/files")
 @login_required
-def parse_links():
-    sites = list(create_site_list(current_user))
+def list_user_files():
+    files = [file for file in get_user_uploads_folder(current_user).glob("*.txt")]
+    return render_template("files.html", files=files)
+
+
+@app.route("/upload", methods=["GET", "POST"])
+@login_required
+def upload_file():
+    form = FileUploadForm()
+
+    if form.validate_on_submit():
+        file = form.document.data
+        file_name = secure_filename(file.filename)
+        save_path = get_user_uploads_folder(current_user) / file_name
+
+        if save_path.exists():
+            flash(f"File with name {file_name} already exists", category="danger")
+            return render_template("upload_file.html", form=form)
+
+        file.save(save_path)
+        flash("File uploaded successfully", category="success")
+        return redirect(url_for("list_user_files"))
+
+    for field, error in form.errors.items():
+        flash(f"{field.title()}: {error[0]}", category="danger")
+    return render_template("upload_file.html", form=form)
+
+
+@app.route("/parse/<file_name>")
+@login_required
+def parse_links(file_name: str):
+    sites = list(create_site_list(current_user, file_name))
+
     db.session.flush(Site.query.all())
     Site.query.filter_by(user=current_user).merge_result(sites, load=False)
 

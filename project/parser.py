@@ -48,9 +48,10 @@ def parse_links() -> NoReturn:
     selector = "a.ext"
     response = requests.get(WEBSITES_LIST_URL, headers=HEADERS)
     soup = BeautifulSoup(response.content, "lxml")
+    links = [f"{link['href'].strip()}\n" for link in soup.select(selector=selector)]
     with open(app.config["LINKS_FILE"], "a") as file:
-        for link in soup.select(selector=selector):
-            file.write(f"{link['href'].strip()}\n")
+        for link in links:
+            file.write(link)
 
 
 async def fetch(
@@ -78,7 +79,9 @@ async def fetch(
         return url, result, time_
 
 
-async def crawl() -> List[Callable[[int], Awaitable[str]]]:
+async def crawl(
+    file_path: str,
+) -> List[Callable[[int], Awaitable[str]]]:
     """Fetch links from text file with fetch()
     function and returns a list of asyncio coroutines.
 
@@ -87,9 +90,14 @@ async def crawl() -> List[Callable[[int], Awaitable[str]]]:
     """
     async with aiohttp.ClientSession() as session:
         tasks = []
-        with open(app.config["LINKS_FILE"], "r") as file:
+        with open(file_path, "r") as file:
             for url in file.readlines():
-                tasks.append(fetch(session, url))
+                try:
+                    task = fetch(session, url)
+                except aiohttp.ClientResponseError:
+                    continue
+                else:
+                    tasks.append(task)
         tasks = await asyncio.gather(*tasks)
         return tasks
 
@@ -120,7 +128,7 @@ def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
 
 
 @create_file_in_not_exists(parse_links)
-def create_site_list(user: User) -> List[Site]:
+def create_site_list(user: User, file_path: str) -> List[Site]:
     """Create a list of SQLAlchemy Site model instances.
 
     Args:
@@ -131,7 +139,10 @@ def create_site_list(user: User) -> List[Site]:
     """
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    data = loop.run_until_complete(crawl())
+    data = loop.run_until_complete(crawl(file_path))
     loop.close()
     for url, item, time_ in data:
-        yield create_site(user, url, item, time_)
+        try:
+            yield create_site(user, url, item, time_)
+        except aiohttp.ClientResponseError:
+            continue

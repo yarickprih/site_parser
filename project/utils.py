@@ -2,7 +2,7 @@ import random
 import uuid
 import xml.etree.ElementTree as ET
 from functools import wraps
-from pathlib import Path
+from pathlib import Path, PosixPath
 from typing import Any, Callable, List, Union
 from xml.dom import minidom
 
@@ -54,23 +54,23 @@ def create_xml_report(urls: List[Site]) -> str:
     return file_name
 
 
-def create_fake_user(n: int = 1) -> Union[User, List[User]]:
+def create_fake_user(n: int = 1) -> List[User]:
     """Generate SQLAlchemy User model instance with fake data.
 
     Args:
         n (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
-        Union[User, List[User]]: SQLAlchemy User model instance or list of User model instances
+        Union[User, List[User]]: list of User model instances
     """
     user = User(
         username=fake.simple_profile()["username"],
         password=fake.password(length=12),
     )
-    return [user for _ in range(n)] if n > 1 else user
+    return [user for _ in range(n)]
 
 
-def create_fake_site(user: User, n: int = 1) -> Union[Site, List[Site]]:
+def create_fake_site(user: User, n: int = 1) -> List[Site]:
     """Generate SQLAlchemy User model instance with fake data.
 
     Args:
@@ -78,7 +78,7 @@ def create_fake_site(user: User, n: int = 1) -> Union[Site, List[Site]]:
         n (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
-        Union[Site, List[Site]]: SQLAlchemy Site model instance or list of Site model instances
+        Union[Site, List[Site]]: list of Site model instances
     """
     site = Site(
         user=user,
@@ -86,7 +86,7 @@ def create_fake_site(user: User, n: int = 1) -> Union[Site, List[Site]]:
         title=" ".join(fake.words(nb=random.randint(1, 10))),
         scrapping_time=random.randint(0, 10000),
     )
-    return [site for _ in range(n)] if n > 1 else site
+    return [site for _ in range(n)]
 
 
 def create_file_in_not_exists(func: Callable) -> Callable:
@@ -116,3 +116,10 @@ def create_file_in_not_exists(func: Callable) -> Callable:
         return wrapper
 
     return decorator
+
+
+def get_user_uploads_folder(user: User) -> PosixPath:
+    path = Path(app.config["UPLOADS"]) / user.username
+    if not path.exists():
+        Path.mkdir(path, parents=True, exist_ok=True)
+    return path
