@@ -3,7 +3,6 @@ from typing import NoReturn
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
-
 from project import db, login
 
 
@@ -11,6 +10,11 @@ class DBModelMixin:
     """Mixin class implementing logic of adding entity to db and committing changes."""
 
     def commit_to_db(self) -> NoReturn:
+        """Add instance to database session and commit it.
+
+        Returns:
+            NoReturn
+        """
         db.session.add(self)
         db.session.commit()
 
@@ -35,12 +39,12 @@ class User(db.Model, UserMixin, DBModelMixin):
     )
     created_at = db.Column(
         db.DateTime(timezone=True),
-        default=db.func.current_timestamp(),
+        default=datetime.datetime.utcnow,
     )
     last_login = db.Column(
         db.DateTime,
-        default=db.func.current_timestamp(),
-        onupdate=db.func.current_timestamp(),
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow,
     )
     sites = db.relationship(
         "Site",
@@ -105,10 +109,9 @@ class Site(db.Model, DBModelMixin):
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
-        default=datetime.now(),
+        default=datetime.datetime.utcnow,
     )
     scrapping_time = db.Column(
         db.Integer,
         nullable=False,
     )
-

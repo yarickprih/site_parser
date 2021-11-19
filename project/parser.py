@@ -9,34 +9,42 @@ from bs4 import BeautifulSoup
 from flask import current_app as app
 
 from .models import Site, User
-from .utils import create_file_in_not_exists
 
-WEBSITES_LIST_URL = "https://blog.feedspot.com/world_news_blogs/"
-# WEBSITES_LIST_URL = "https://www.sitebuilderreport.com/inspiration/blog-examples"
-user_agents = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
-    "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.72 Mobile Safari/537.36",
-]
-user_agent = random.choice(user_agents)
-HEADERS = {
-    "authority": "httpbin.org",
-    "cache-control": "max-age=0",
-    "sec-ch-ua": '"Chromium";v="92", " Not A;Brand";v="99", "Google Chrome";v="92"',
-    "sec-ch-ua-mobile": "?0",
-    "upgrade-insecure-requests": "1",
-    "user-agent": user_agent,
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-    "sec-fetch-site": "none",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-user": "?1",
-    "sec-fetch-dest": "document",
-    "accept-language": "en-US,en;q=0.9",
-}
+# from .utils import create_file_in_not_exists
 
-# URL = namedtuple("URL", ["user", "url", "title", "scrapping_time"])
+
+class RequestConfig:
+    """Config variables for making HTTP requests."""
+
+    WEBSITES_LIST_URL = "https://blog.feedspot.com/world_news_blogs/"
+    USER_AGENTS = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+             Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
+            Chrome/92.0.4515.107 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
+            Chrome/90.0.4430.212 Safari/537.36",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 \
+            (KHTML, like Gecko) Mobile/15E148",
+        "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) \
+            Chrome/89.0.4389.72 Mobile Safari/537.36",
+    ]
+    USER_AGENT = random.choice(USER_AGENTS)
+    HEADERS = {
+        "authority": "httpbin.org",
+        "cache-control": "max-age=0",
+        "sec-ch-ua": '"Chromium";v="92", " Not A;Brand";v="99", "Google Chrome";v="92"',
+        "sec-ch-ua-mobile": "?0",
+        "upgrade-insecure-requests": "1",
+        "user-agent": USER_AGENT,
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,\
+            image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "sec-fetch-site": "none",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-user": "?1",
+        "sec-fetch-dest": "document",
+        "accept-language": "en-US,en;q=0.9",
+    }
 
 
 def parse_links() -> NoReturn:
@@ -46,7 +54,9 @@ def parse_links() -> NoReturn:
         NoReturn: NoReturn
     """
     selector = "a.ext"
-    response = requests.get(WEBSITES_LIST_URL, headers=HEADERS)
+    response = requests.get(
+        RequestConfig.WEBSITES_LIST_URL, headers=RequestConfig.HEADERS
+    )
     soup = BeautifulSoup(response.content, "lxml")
     links = [f"{link['href'].strip()}\n" for link in soup.select(selector=selector)]
     with open(app.config["LINKS_FILE"], "a") as file:
@@ -70,7 +80,7 @@ async def fetch(
             time_ (time.time): Time in took to make a request
     """
     start = time.time()
-    async with session.get(url, headers=HEADERS) as response:
+    async with session.get(url, headers=RequestConfig.HEADERS) as response:
         if response.status != 200:
             pass
         result = await response.text()
@@ -127,7 +137,6 @@ def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
     )
 
 
-@create_file_in_not_exists(parse_links)
 def create_site_list(user: User, file_path: str) -> List[Site]:
     """Create a list of SQLAlchemy Site model instances.
 

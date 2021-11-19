@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField, FileRequired
-from wtforms import FileField, Form, PasswordField, StringField, validators
+from wtforms import PasswordField, StringField, validators
 
 
 class RegistrationForm(FlaskForm):
@@ -53,6 +53,7 @@ class LoginForm(FlaskForm):
 
 
 class FileUploadForm(FlaskForm):
+    """WTForms File upload form."""
     document = FileField(
         "Document",
         validators=[

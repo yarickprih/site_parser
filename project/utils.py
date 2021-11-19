@@ -1,9 +1,8 @@
 import random
 import uuid
 import xml.etree.ElementTree as ET
-from functools import wraps
 from pathlib import Path, PosixPath
-from typing import Any, Callable, List, Union
+from typing import List
 from xml.dom import minidom
 
 from faker import Faker
@@ -54,11 +53,11 @@ def create_xml_report(urls: List[Site]) -> str:
     return file_name
 
 
-def create_fake_user(n: int = 1) -> List[User]:
+def create_fake_user(instances: int = 1) -> List[User]:
     """Generate SQLAlchemy User model instance with fake data.
 
     Args:
-        n (int, optional): number of instances to create. Defaults to 1.
+        instances (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
         Union[User, List[User]]: list of User model instances
@@ -67,15 +66,15 @@ def create_fake_user(n: int = 1) -> List[User]:
         username=fake.simple_profile()["username"],
         password=fake.password(length=12),
     )
-    return [user for _ in range(n)]
+    return [user for _ in range(instances)]
 
 
-def create_fake_site(user: User, n: int = 1) -> List[Site]:
+def create_fake_site(user: User, instances: int = 1) -> List[Site]:
     """Generate SQLAlchemy User model instance with fake data.
 
     Args:
         user (User): SQLAlchemy User model instance
-        n (int, optional): number of instances to create. Defaults to 1.
+        instances (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
         Union[Site, List[Site]]: list of Site model instances
@@ -86,39 +85,20 @@ def create_fake_site(user: User, n: int = 1) -> List[Site]:
         title=" ".join(fake.words(nb=random.randint(1, 10))),
         scrapping_time=random.randint(0, 10000),
     )
-    return [site for _ in range(n)]
-
-
-def create_file_in_not_exists(func: Callable) -> Callable:
-    """Check if LINKS_FILE exists or not empty.
-
-    Decorator to check if LINKS_FILE exists or not empty to.
-    If it is - calls the function that creates a new LINKS_FILE.
-
-    Args:
-        func (Callable): function that creates LINKS_FILE
-
-    Returns:
-        Callable: decorated function
-    """
-
-    def decorator(f: Callable) -> Callable:
-        @wraps(f)
-        def wrapper(*args, **kwargs) -> Any:
-            if (
-                not app.config["LINKS_FILE"].exists()
-                or app.config["LINKS_FILE"].stat().st_size == 0
-            ):
-                func()
-            res = f(*args, **kwargs)
-            return res
-
-        return wrapper
-
-    return decorator
+    return [site for _ in range(instances)]
 
 
 def get_user_uploads_folder(user: User) -> PosixPath:
+    """Create user uploads directory if corresponding one is missing.
+
+    Check if user uploads folder exists and if not create it
+
+    Args:
+        user (User): User instance
+
+    Returns:
+        PosixPath: pathlib path to the user uploads folder
+    """
     path = Path(app.config["UPLOADS"]) / user.username
     if not path.exists():
         Path.mkdir(path, parents=True, exist_ok=True)

@@ -1,0 +1,42 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+  - repo: https://github.com/pycqa/pylint
+    rev: v2.11.1
+    hooks:
+      - id: pylint
+        name: "Pylint modules without Flask and SQLAlchemy"
+        exclude: "models.py|routes.py"
+        additional_dependencies:
+          - flask
+          - flask_login
+          - flask_migrate
+          - flask_sqlalchemy
+          - aiohttp
+          - requests
+          - beautifulsoup4
+          - faker
+          - wtforms
+          - flask_wtf
+      - id: pylint
+        name: "Pylint SQLAlchemy module"
+        files: "models.py"
+        args: ["--load-plugins", "pylint_flask_sqlalchemy"]
+        additional_dependencies:
+          - pylint-flask-sqlalchemy
+          - flask_login
+      - id: pylint
+        name: "Pylint Flask module"
+        files: "routes.py"
+        args: ["--load-plugins", "pylint_flask"]
+        additional_dependencies:
+          - pylint-flask
+          - flask
+          - flask_login
+          - werkzeug
+          - sqlalchemy

@@ -50,3 +50,6 @@ prune-images:
 
 prune-volumes:
 	sudo docker volume prune --force
+
+lint:
+	pylint --load-plugins pylint_flask pylint_flask_sqlalchemy project

@@ -1,5 +1,3 @@
-from pathlib import Path, PosixPath
-
 from flask import current_app as app
 from flask import (
     flash,
@@ -85,13 +83,18 @@ def download():
 @app.route("/files")
 @login_required
 def list_user_files():
-    files = [file for file in get_user_uploads_folder(current_user).glob("*.txt")]
+    """List of files uploaded by the user route."""
+    files = list(get_user_uploads_folder(current_user).glob("*.txt"))
     return render_template("files.html", files=files)
 
 
 @app.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload_file():
+    """Route for uploading txt files with site urls.
+
+    Files uploaded with this route would be saved to the folder
+    assigned to UPLOADS config variable truncating a folder for specific user."""
     form = FileUploadForm()
 
     if form.validate_on_submit():
@@ -115,18 +118,39 @@ def upload_file():
 @app.route("/parse/<file_name>")
 @login_required
 def parse_links(file_name: str):
-    sites = list(create_site_list(current_user, file_name))
+    """Parse sites from the file and create corresponding records to the database.
 
-    db.session.flush(Site.query.all())
-    Site.query.filter_by(user=current_user).merge_result(sites, load=False)
+    This route takes a file name as a parameter and searches for that
+    file in the current user uploads folder.
+    After the file is being processed, created file instances
+    are commited to the database."""
+    file_path = get_user_uploads_folder(current_user) / file_name
+    if not file_path.exists():
+        flash(
+            f"File {file_name} doesn't exist. You have to upload it first",
+            category="danger",
+        )
+        return redirect(url_for("upload_file"))
 
+    sites = {str(site.url): site for site in create_site_list(current_user, file_path)}
+    for site in Site.query.filter(Site.url.in_(sites.keys())).all():
+        try:
+            site_to_merge = sites.pop(site.url)
+        except KeyError:
+            pass
+        else:
+            db.session.merge(site_to_merge, load=False)
+    db.session.add_all(sites)
     db.session.commit()
+
+    # Site.query.filter_by(user=current_user).merge_result(sites, load=False)
     flash("Sites have been added successfully!", category="success")
     return redirect(url_for("index"))
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    """Flask-Login User login route."""
     if current_user.is_authenticated:
         return redirect(url_for("index"))
     form = LoginForm(request.form)
@@ -138,15 +162,15 @@ def login():
                 category="danger",
             )
             return render_template("login.html", title="Login Page", form=form)
-        if user.check_password(form.password.data):
+        if not user.check_password(form.password.data):
+            flash("Incorrect password!", category="danger")
+        else:
             login_user(user)
             flash(
-                f"User has been authenticated successfully!",
+                "User has been authenticated successfully!",
                 category="success",
             )
             return redirect("/login?next=" + request.path)
-        else:
-            flash("Incorrect password!", category="danger")
     for field, error in form.errors.items():
         flash(f"{field.title()}: {error[0]}", category="danger")
     return render_template("login.html", title="Login Page", form=form)
@@ -154,6 +178,7 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    """User registration route."""
     form = RegistrationForm(request.form)
     if request.method == "POST" and form.validate():
         try:
@@ -174,6 +199,7 @@ def register():
 
 @app.route("/logout")
 def logout():
+    """User logout route."""
     logout_user()
     flash("You've been logged out successfully!", category="warning")
     return redirect(url_for("login"))
