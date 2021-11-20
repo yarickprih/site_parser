@@ -42,12 +42,14 @@ class DevelopmentConfig(Config):
     """Development config class (inherited from base config class)"""
 
     DEBUG = True
+    TESTING = False
 
 
 class TestingConfig(Config):
     """Testing config class (inherited from base config class)"""
 
     TESTING = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///db.sqlite3"
 
 
 config_map = {

@@ -23,6 +23,7 @@ repos:
           - faker
           - wtforms
           - flask_wtf
+          - pytest
       - id: pylint
         name: "Pylint SQLAlchemy module"
         files: "models.py"

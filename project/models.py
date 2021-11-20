@@ -3,6 +3,7 @@ from typing import NoReturn
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
+
 from project import db, login
 
 
@@ -39,12 +40,12 @@ class User(db.Model, UserMixin, DBModelMixin):
     )
     created_at = db.Column(
         db.DateTime(timezone=True),
-        default=datetime.datetime.utcnow,
+        default=datetime.utcnow,
     )
     last_login = db.Column(
         db.DateTime,
-        default=datetime.datetime.utcnow,
-        onupdate=datetime.datetime.utcnow,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
     )
     sites = db.relationship(
         "Site",
@@ -109,7 +110,7 @@ class Site(db.Model, DBModelMixin):
     created_at = db.Column(
         db.DateTime(timezone=True),
         nullable=False,
-        default=datetime.datetime.utcnow,
+        default=datetime.utcnow,
     )
     scrapping_time = db.Column(
         db.Integer,
