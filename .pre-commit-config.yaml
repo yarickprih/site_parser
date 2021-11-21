@@ -26,11 +26,12 @@ repos:
           - pytest
       - id: pylint
         name: "Pylint SQLAlchemy module"
-        files: "models.py"
+        files: "^models.py"
         args: ["--load-plugins", "pylint_flask_sqlalchemy"]
         additional_dependencies:
           - pylint-flask-sqlalchemy
           - flask_login
+          - pytest
       - id: pylint
         name: "Pylint Flask module"
         files: "routes.py"
@@ -41,3 +42,4 @@ repos:
           - flask_login
           - werkzeug
           - sqlalchemy
+          - pytest

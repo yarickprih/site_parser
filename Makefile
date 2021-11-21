@@ -50,3 +50,6 @@ prune-images:
 
 prune-volumes:
 	sudo docker volume prune --force
+
+test:
+	pytest -v

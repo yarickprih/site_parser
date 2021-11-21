@@ -6,3 +6,4 @@ migrations
 *.txt
 !requirements.txt
 !requirements.dev.txt
+**/*.sqlite3

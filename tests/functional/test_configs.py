@@ -1,5 +1,6 @@
 from project.config import create_db_url
 
+
 def test_testing_config(app):
     app.config.from_object("project.config.TestingConfig")
     assert app.config["TESTING"]
