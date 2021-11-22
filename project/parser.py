@@ -1,9 +1,12 @@
 import asyncio
 import random
+import ssl
 import time
+from datetime import datetime
 from typing import Awaitable, Callable, List, NoReturn, Tuple
 
 import aiohttp
+import certifi
 import requests
 from bs4 import BeautifulSoup
 from flask import current_app as app
@@ -19,7 +22,7 @@ class RequestConfig:
     WEBSITES_LIST_URL = "https://blog.feedspot.com/world_news_blogs/"
     USER_AGENTS = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
-             Chrome/91.0.4472.124 Safari/537.36",
+                Chrome/91.0.4472.124 Safari/537.36",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
             Chrome/92.0.4515.107 Safari/537.36",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
@@ -31,20 +34,13 @@ class RequestConfig:
     ]
     USER_AGENT = random.choice(USER_AGENTS)
     HEADERS = {
-        "authority": "httpbin.org",
         "cache-control": "max-age=0",
-        "sec-ch-ua": '"Chromium";v="92", " Not A;Brand";v="99", "Google Chrome";v="92"',
-        "sec-ch-ua-mobile": "?0",
-        "upgrade-insecure-requests": "1",
-        "user-agent": USER_AGENT,
+        "user-agent": "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36 \
+            (KHTML, like Gecko) Chrome/89.0.4389.72 Mobile Safari/537.36",
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,\
             image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-        "sec-fetch-site": "none",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-user": "?1",
-        "sec-fetch-dest": "document",
-        "accept-language": "en-US,en;q=0.9",
     }
+    SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 
 def parse_links() -> NoReturn:
@@ -80,10 +76,10 @@ async def fetch(
             time_ (time.time): Time in took to make a request
     """
     start = time.time()
-    async with session.get(url, headers=RequestConfig.HEADERS) as response:
-        if response.status != 200:
-            pass
-        result = await response.text()
+    async with session.get(
+        url, headers=RequestConfig.HEADERS, ssl_context=RequestConfig.SSL_CONTEXT
+    ) as response:
+        result = await response.read()
         end = time.time()
         time_ = end - start
         return url, result, time_
@@ -102,12 +98,8 @@ async def crawl(
         tasks = []
         with open(file_path, "r") as file:
             for url in file.readlines():
-                try:
-                    task = fetch(session, url)
-                except aiohttp.ClientResponseError:
-                    continue
-                else:
-                    tasks.append(task)
+                task = fetch(session, url)
+                tasks.append(task)
         tasks = await asyncio.gather(*tasks)
         return tasks
 
@@ -129,11 +121,12 @@ def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
         title = soup.select_one("title").text.strip()
     except AttributeError:
         title = "Unknown title"
-    return Site(
+    return dict(
         user=user,
         url=url[:-1],
         title=title,
         scrapping_time=int(time_ * 1000),
+        created_at=datetime.utcnow(),
     )
 
 
@@ -151,7 +144,4 @@ def create_site_list(user: User, file_path: str) -> List[Site]:
     data = loop.run_until_complete(crawl(file_path))
     loop.close()
     for url, item, time_ in data:
-        try:
-            yield create_site(user, url, item, time_)
-        except aiohttp.ClientResponseError:
-            continue
+        yield create_site(user, url, item, time_)

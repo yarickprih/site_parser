@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import current_app as app
 from flask import (
     flash,
@@ -132,16 +134,29 @@ def parse_links(file_name: str):
         )
         return redirect(url_for("upload_file"))
 
-    sites = {str(site.url): site for site in create_site_list(current_user, file_path)}
-    for site in Site.query.filter(Site.url.in_(sites.keys())).all():
-        try:
-            site_to_merge = sites.pop(site.url)
-        except KeyError:
-            pass
+    sites = {site["url"]: site for site in create_site_list(current_user, file_path)}
+    for url, site in sites.items():
+        site_in_db = Site.query.filter_by(url=url, user=current_user)
+        if site_in_db.first():
+            site_in_db.update(
+                dict(
+                    scrapping_time=site["scrapping_time"],
+                    created_at=site["created_at"],
+                )
+            )
         else:
-            db.session.merge(site_to_merge, load=False)
-    db.session.add_all(sites)
+            site_to_create = Site(**site)
+            print(site_to_create)
+            db.session.add(site_to_create)
     db.session.commit()
+
+    # for site in Site.query.filter(Site.url.in_(sites.keys())).all():
+    #     try:
+    #         site_to_merge = sites.pop(site.url)
+    #     except KeyError:
+    #         pass
+    #     else:
+    #         db.session.merge(site_to_merge, load=False)
 
     # Site.query.filter_by(user=current_user).merge_result(sites, load=False)
     flash("Sites have been added successfully!", category="success")
@@ -199,7 +214,13 @@ def register():
 
 @app.route("/logout")
 def logout():
-    """User logout route."""
+    """User logout route.
+
+    Before logout updates current user last_login field with logout datetime.utcnow.
+    """
+    user = User.query.filter_by(username=current_user.username).first()
+    user.last_login = datetime.utcnow()
+    user.commit_to_db()
     logout_user()
     flash("You've been logged out successfully!", category="warning")
     return redirect(url_for("login"))

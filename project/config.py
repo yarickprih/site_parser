@@ -50,6 +50,7 @@ class TestingConfig(Config):
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///db.sqlite3"
+    PRESERVE_CONTEXT_ON_EXCEPTION = False
 
 
 config_map = {

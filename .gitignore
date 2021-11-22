@@ -7,3 +7,4 @@ migrations
 !requirements.txt
 !requirements.dev.txt
 **/*.sqlite3
+.pytest_cache

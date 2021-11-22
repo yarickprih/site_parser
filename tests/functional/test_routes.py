@@ -1,5 +1,4 @@
-def test_index_user_not_logged_in(app):
-    client = app.test_client()
-    with client:
+def test_index_user_not_logged_in(app, client):
+    with app.test_request_context():
         response = client.get("/")
-    assert response.status_code == 404
+        assert response.status_code == 404
