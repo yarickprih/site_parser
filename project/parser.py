@@ -1,9 +1,8 @@
 import asyncio
-import random
 import ssl
 import time
 from datetime import datetime
-from typing import Awaitable, Callable, List, NoReturn, Tuple
+from typing import Awaitable, Callable, List, NoReturn, Tuple, Union
 
 import aiohttp
 import certifi
@@ -13,26 +12,11 @@ from flask import current_app as app
 
 from .models import Site, User
 
-# from .utils import create_file_in_not_exists
-
 
 class RequestConfig:
     """Config variables for making HTTP requests."""
 
     WEBSITES_LIST_URL = "https://blog.feedspot.com/world_news_blogs/"
-    USER_AGENTS = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
-                Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
-            Chrome/92.0.4515.107 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) \
-            Chrome/90.0.4430.212 Safari/537.36",
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 12_2 like Mac OS X) AppleWebKit/605.1.15 \
-            (KHTML, like Gecko) Mobile/15E148",
-        "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36 (KHTML, like Gecko) \
-            Chrome/89.0.4389.72 Mobile Safari/537.36",
-    ]
-    USER_AGENT = random.choice(USER_AGENTS)
     HEADERS = {
         "cache-control": "max-age=0",
         "user-agent": "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36 \
@@ -104,7 +88,9 @@ async def crawl(
         return tasks
 
 
-def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
+def create_site(
+    user: User, url: str, data: str, time_: time.time
+) -> dict[str, Union[str, User, int, datetime]]:
     """Create a URL instance with passed arguments.
 
     Args:
@@ -114,7 +100,8 @@ def create_site(user: User, url: str, data: str, time_: time.time) -> Site:
         time_ (time.time): Time in took to make a request
 
     Returns:
-        URL: URL namedtuple instance
+        dict[str, Union[str, User, int, datetime]]: dictionary with Site
+        model attributes and values
     """
     soup = BeautifulSoup(data, "lxml")
     try:

@@ -134,31 +134,21 @@ def parse_links(file_name: str):
         )
         return redirect(url_for("upload_file"))
 
-    sites = {site["url"]: site for site in create_site_list(current_user, file_path)}
-    for url, site in sites.items():
-        site_in_db = Site.query.filter_by(url=url, user=current_user)
-        if site_in_db.first():
-            site_in_db.update(
-                dict(
-                    scrapping_time=site["scrapping_time"],
-                    created_at=site["created_at"],
+    with db.session.no_autoflush:
+        for site in create_site_list(current_user, file_path):
+            site_to_update = Site.query.filter_by(url=site["url"])
+            if site_to_update.first():
+                site_to_update.update(
+                    dict(
+                        user_id=site["user"].id,
+                        scrapping_time=site["scrapping_time"],
+                        created_at=site["created_at"],
+                    )
                 )
-            )
-        else:
-            site_to_create = Site(**site)
-            print(site_to_create)
-            db.session.add(site_to_create)
-    db.session.commit()
-
-    # for site in Site.query.filter(Site.url.in_(sites.keys())).all():
-    #     try:
-    #         site_to_merge = sites.pop(site.url)
-    #     except KeyError:
-    #         pass
-    #     else:
-    #         db.session.merge(site_to_merge, load=False)
-
-    # Site.query.filter_by(user=current_user).merge_result(sites, load=False)
+            else:
+                site_to_create = Site(**site)
+                db.session.add(site_to_create)
+        db.session.commit()
     flash("Sites have been added successfully!", category="success")
     return redirect(url_for("index"))
 

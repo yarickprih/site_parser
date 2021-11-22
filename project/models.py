@@ -105,6 +105,7 @@ class Site(db.Model, DBModelMixin):
     )
     title = db.Column(
         db.Text,
+        unique=True,
         nullable=False,
     )
     created_at = db.Column(
