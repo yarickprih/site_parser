@@ -17,7 +17,7 @@ from project import db
 
 from .forms import FileUploadForm, LoginForm, RegistrationForm
 from .models import Site, User
-from .parser import create_site_list
+from .parser import create_sites_list
 from .utils import create_xml_report, get_user_uploads_folder
 
 
@@ -122,10 +122,14 @@ def upload_file():
 def parse_links(file_name: str):
     """Parse sites from the file and create corresponding records to the database.
 
+    Args:
+        file_name (str): name of the file containing links to parse
+
     This route takes a file name as a parameter and searches for that
     file in the current user uploads folder.
     After the file is being processed, created file instances
-    are commited to the database."""
+    are commited to the database.
+    """
     file_path = get_user_uploads_folder(current_user) / file_name
     if not file_path.exists():
         flash(
@@ -135,7 +139,7 @@ def parse_links(file_name: str):
         return redirect(url_for("upload_file"))
 
     with db.session.no_autoflush:
-        for site in create_site_list(current_user, file_path):
+        for site in create_sites_list(current_user, file_path):
             site_to_update = Site.query.filter_by(url=site["url"])
             if site_to_update.first():
                 site_to_update.update(

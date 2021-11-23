@@ -19,6 +19,6 @@ def client(app):
 @pytest.fixture(scope="module")
 def test_database(app):
     db.create_all()
-    yield db  # testing happens here
+    yield db
     db.session.remove()
     db.drop_all()

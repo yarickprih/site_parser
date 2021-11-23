@@ -19,7 +19,7 @@ def create_db_url() -> str:
     return f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
 
-class Config:
+class BaseConfig:
     """Base app config class."""
 
     DEBUG = bool(os.getenv("DEBUG", "0"))
@@ -32,21 +32,21 @@ class Config:
     UPLOADS = BASE_DIR / "uploads"
 
 
-class ProductionConfig(Config):
-    """Production config class (inherited from base config class)"""
+class ProductionConfig(BaseConfig):
+    """Production config class (inherited from BaseConfig)"""
 
     DEBUG = False
 
 
-class DevelopmentConfig(Config):
-    """Development config class (inherited from base config class)"""
+class DevelopmentConfig(BaseConfig):
+    """Development config class (inherited from BaseConfig)"""
 
     DEBUG = True
     TESTING = False
 
 
-class TestingConfig(Config):
-    """Testing config class (inherited from base config class)"""
+class TestingConfig(BaseConfig):
+    """Testing config class (inherited from BaseConfig)"""
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///db.sqlite3"

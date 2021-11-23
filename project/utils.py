@@ -8,7 +8,6 @@ from xml.dom import minidom
 from faker import Faker
 from flask import current_app as app
 
-from .config import Config
 from .models import Site, User
 
 fake = Faker()
@@ -28,14 +27,14 @@ def create_xml_report(urls: List[Site]) -> str:
     root = ET.Element("Catalog")
 
     for url in urls:
-        link = ET.Element("link")
-        root.append(link)
+        site = ET.Element("site")
+        root.append(site)
 
-        title = ET.SubElement(link, "title")
-        url_str = ET.SubElement(link, "url")
-        user = ET.SubElement(link, "user")
-        scrapping_time = ET.SubElement(link, "scrapping_time")
-        date = ET.SubElement(link, "date")
+        title = ET.SubElement(site, "title")
+        url_str = ET.SubElement(site, "url")
+        user = ET.SubElement(site, "user")
+        scrapping_time = ET.SubElement(site, "scrapping_time")
+        date = ET.SubElement(site, "date")
 
         title.text = url.title
         url_str.text = url.url
@@ -44,7 +43,7 @@ def create_xml_report(urls: List[Site]) -> str:
         date.text = url.created_at.strftime("%B %d %Y")
 
     tree = minidom.parseString(ET.tostring(root)).toprettyxml(indent=" " * 4)
-    save_path = Path(Config.FILES_DIR)
+    save_path = Path(app.config["FILES_DIR"])
     if not save_path.exists():
         save_path.mkdir(parents=True, exist_ok=True)
     file_name = f"{uuid.uuid4()}.xml"
@@ -60,7 +59,7 @@ def create_fake_user(instances: int = 1) -> List[User]:
         instances (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
-        Union[User, List[User]]: list of User model instances
+        List[User]: list of User model instances
     """
     user = User(
         username=fake.simple_profile()["username"],
@@ -77,7 +76,7 @@ def create_fake_site(user: User, instances: int = 1) -> List[Site]:
         instances (int, optional): number of instances to create. Defaults to 1.
 
     Returns:
-        Union[Site, List[Site]]: list of Site model instances
+        List[Site]: list of Site model instances
     """
     site = Site(
         user=user,
