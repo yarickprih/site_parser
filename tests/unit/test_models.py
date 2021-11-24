@@ -13,7 +13,9 @@ def test_user(test_database):
 
 @pytest.fixture(scope="module")
 def test_site(test_database, test_user):
-    site = Site(user=test_user, url="test.com", title="Title", scrapping_time=123)
+    site = Site(
+        user=test_user, url="test.com", title="Title", scrapping_time=123
+    )
     test_database.session.add(site)
     test_database.session.commit()
     yield site

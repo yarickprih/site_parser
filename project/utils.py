@@ -1,3 +1,4 @@
+from functools import wraps
 import random
 import uuid
 import xml.etree.ElementTree as ET
@@ -7,6 +8,8 @@ from xml.dom import minidom
 
 from faker import Faker
 from flask import current_app as app
+from flask import url_for, redirect
+from flask_login import current_user
 
 from .models import Site, User
 
@@ -16,7 +19,8 @@ fake = Faker()
 def create_xml_report(urls: List[Site]) -> str:
     """Create an XML report file.
 
-    Creates an XML report file with info on a list of Site database model instances
+    Creates an XML report file with info
+    on a list of Site database model instances
 
     Args:
         urls (List[Site]): List of Site database model instances
@@ -56,7 +60,8 @@ def create_fake_user(instances: int = 1) -> List[User]:
     """Generate SQLAlchemy User model instance with fake data.
 
     Args:
-        instances (int, optional): number of instances to create. Defaults to 1.
+        instances (int, optional): number of instances to create.
+        Defaults to 1.
 
     Returns:
         List[User]: list of User model instances
@@ -73,7 +78,8 @@ def create_fake_site(user: User, instances: int = 1) -> List[Site]:
 
     Args:
         user (User): SQLAlchemy User model instance
-        instances (int, optional): number of instances to create. Defaults to 1.
+        instances (int, optional): number of instances to create.
+        Defaults to 1.
 
     Returns:
         List[Site]: list of Site model instances
@@ -102,3 +108,13 @@ def get_user_uploads_folder(user: User) -> PosixPath:
     if not path.exists():
         Path.mkdir(path, parents=True, exist_ok=True)
     return path
+
+
+def user_authenticated(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if current_user.is_authenticated:
+            return redirect(url_for("index"))
+        return func(*args, **kwargs)
+
+    return wrapper

@@ -1,18 +1,7 @@
 import asyncio
 import time
+import typing as t
 from datetime import datetime
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Coroutine,
-    Dict,
-    Iterator,
-    List,
-    NoReturn,
-    Optional,
-    Tuple,
-)
 
 import aiohttp
 import requests
@@ -28,21 +17,30 @@ class RequestConfig:
     WEBSITES_LIST_URL = "https://trends.netcraft.com/topsites"
     HEADERS = {
         "cache-control": "max-age=0",
-        "user-agent": "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36 \
-            (KHTML, like Gecko) Chrome/89.0.4389.72 Mobile Safari/537.36",
-        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,\
-            image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+        "user-agent": (
+            "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36"
+            " (KHTML, like Gecko) Chrome/89.0.4389.72 Mobile Safari/537.36"
+        ),
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image\
+            /avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;\
+                v=b3;q=0.9",
     }
     PROXY = "http://142.93.24.89:3128"
 
 
-def parse_links(url: Optional[str] = None, selector: Optional[str] = None) -> NoReturn:
+def parse_links(
+    url: t.Optional[str] = None,
+    selector: t.Optional[str] = None,
+    file_name: str = None,
+) -> t.NoReturn:
     """Parse links from passed url by the css selector
     and write in into the file.
 
     Args:
-        url (Optional[str], optional): URL to parse to links from. Defaults to None.
-        selector (Optional[str], optional): CSS selector of links to parse. Defaults to None.
+        url (Optional[str], optional): URL to parse to links from.
+        Defaults to None.
+        selector (Optional[str], optional): CSS selector of links to parse.
+        Defaults to None.
 
     Returns:
         NoReturn
@@ -53,8 +51,12 @@ def parse_links(url: Optional[str] = None, selector: Optional[str] = None) -> No
         headers=RequestConfig.HEADERS,
     )
     soup = BeautifulSoup(response.content, "lxml")
-    links = [f"{link['href'].strip()}\n" for link in soup.select(selector=selector)]
-    with open(app.config["LINKS_FILE"], "a") as file:
+    links = [
+        f"{link['href'].strip()}\n" for link in soup.select(selector=selector)
+    ]
+    with open(
+        app.config["UPLOADS"] / file_name or app.config["LINKS_FILE"], "a"
+    ) as file:
         for link in links:
             file.write(link)
 
@@ -63,7 +65,7 @@ async def fetch(
     session: aiohttp.ClientSession,
     semaphore: asyncio.Semaphore,
     url: str,
-) -> Tuple[str, Coroutine[Any, Any, bytes], float]:
+) -> t.Tuple[str, t.Coroutine[t.Any, t.Any, bytes], float]:
     """Make an asynchronous request on given URL.
 
     Args:
@@ -74,22 +76,30 @@ async def fetch(
     Returns:
         Tuple[str, Coroutine[Any, Any, bytes], time.time]:
             url (str): URL that's had been requested
-            result Coroutine[Any, Any, bytes]): coroutine containing response data
+            result Coroutine[Any, Any, bytes]): coroutine containing
+            response data
             time_ (float): Time in took to make a request
     """
     async with semaphore:
-        start = time.perf_counter()
-        async with session.get(url, headers=RequestConfig.HEADERS) as response:
-            end = time.perf_counter()
-            time_ = end - start
-            result = await response.read()
-            return url, result, time_
+        try:
+            start = time.perf_counter()
+            async with session.get(
+                url,
+                headers=RequestConfig.HEADERS,
+                timeout=10,
+            ) as response:
+                end = time.perf_counter()
+                time_ = end - start
+                result = await response.read()
+                return url, result, time_
+        except Exception:  # TODO Add flash message on url request error
+            return None
 
 
 async def crawl(
     file_path: str,
     semaphore: asyncio.Semaphore,
-) -> List[Callable[[Any], Awaitable[Any]]]:
+) -> t.List[t.Callable[[t.Any], t.Awaitable[t.Any]]]:
     """Fetch links from text file with fetch()
     function and returns a list of asyncio coroutines.
 
@@ -98,19 +108,22 @@ async def crawl(
         semaphore (asyncio.Semaphore): asyncio loop Semaphore instance
 
     Returns:
-        List[Callable[[int], Awaitable[str]]]: List of coroutines
+        List[Callable[[Any], Awaitable[str]]]: List of coroutines
     """
     async with aiohttp.ClientSession(
-        connector=aiohttp.TCPConnector(verify_ssl=False),
-        trust_env=True,
+        connector=aiohttp.TCPConnector(ssl=False)
     ) as session:
         with open(file_path, "r") as file:
-            tasks = [fetch(session, semaphore, url) for url in file.readlines()]
+            tasks = [
+                fetch(session, semaphore, url) for url in file.readlines()
+            ]
         tasks = await asyncio.gather(*tasks)
         return tasks
 
 
-def create_site_dict(user: User, url: str, data: str, time_: float) -> Dict[str, Any]:
+def create_site_dict(
+    user: User, url: str, data: str, time_: float
+) -> t.Dict[str, t.Any]:
     """Create a dictionary of Site model attributes and values
     with passed arguments.
 
@@ -138,7 +151,9 @@ def create_site_dict(user: User, url: str, data: str, time_: float) -> Dict[str,
     )
 
 
-def create_sites_list(user: User, file_path: str) -> Iterator[Dict[str, Any]]:
+def create_sites_list(
+    user: User, file_path: str
+) -> t.Iterator[t.Dict[str, t.Any]]:
     """Create a list of SQLAlchemy Site model instances.
 
     Args:
@@ -157,6 +172,8 @@ def create_sites_list(user: User, file_path: str) -> Iterator[Dict[str, Any]]:
     asyncio.set_event_loop(loop)
     semaphore = asyncio.Semaphore(500)
     data = loop.run_until_complete(crawl(file_path, semaphore))
-    loop.close()
-    for url, item, time_ in data:
-        yield create_site_dict(user, url, item, time_)
+    for item in data:
+        if not item:
+            continue
+        url, body, time_ = item
+        yield create_site_dict(user, url, body, time_)

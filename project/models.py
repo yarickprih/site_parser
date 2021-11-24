@@ -1,5 +1,5 @@
+import typing as t
 from datetime import datetime
-from typing import NoReturn
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -8,9 +8,10 @@ from project import db, login
 
 
 class DBModelMixin:
-    """Mixin class implementing logic of adding entity to db and committing changes."""
+    """Mixin class implementing logic of adding
+    entity to db and committing changes."""
 
-    def commit_to_db(self) -> NoReturn:
+    def commit_to_db(self) -> t.NoReturn:
         """Add instance to database session and commit it.
 
         Returns:
@@ -75,7 +76,8 @@ class User(db.Model, UserMixin, DBModelMixin):
             password (str): password string
 
         Returns:
-            bool: bool value indicating whether passed password matched password hash of not
+            bool: bool value indicating whether passed
+            password matched password hash of not
         """
         return check_password_hash(self.password, password)
 
@@ -102,10 +104,10 @@ class Site(db.Model, DBModelMixin):
     url = db.Column(
         db.String(255),
         nullable=False,
+        unique=True,
     )
     title = db.Column(
         db.Text,
-        unique=True,
         nullable=False,
     )
     created_at = db.Column(

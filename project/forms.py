@@ -54,6 +54,7 @@ class LoginForm(FlaskForm):
 
 class FileUploadForm(FlaskForm):
     """WTForms File upload form."""
+
     document = FileField(
         "Document",
         validators=[

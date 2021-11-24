@@ -18,7 +18,11 @@ from project import db
 from .forms import FileUploadForm, LoginForm, RegistrationForm
 from .models import Site, User
 from .parser import create_sites_list
-from .utils import create_xml_report, get_user_uploads_folder
+from .utils import (
+    create_xml_report,
+    get_user_uploads_folder,
+    user_authenticated,
+)
 
 
 @app.route("/")
@@ -45,7 +49,8 @@ def index():
 def links_user_specific(user_name: str):
     """Sites filtered by current user.
 
-    It includes 'sites' context variable which consists Site DB records filtered by current user.
+    It includes 'sites' context variable which consists Site DB
+    records filtered by current user.
 
     Args:
         user_name (str): current user username
@@ -96,7 +101,8 @@ def upload_file():
     """Route for uploading txt files with site urls.
 
     Files uploaded with this route would be saved to the folder
-    assigned to UPLOADS config variable truncating a folder for specific user."""
+    assigned to UPLOADS config variable truncating a folder for
+    specific user."""
     form = FileUploadForm()
 
     if form.validate_on_submit():
@@ -105,7 +111,9 @@ def upload_file():
         save_path = get_user_uploads_folder(current_user) / file_name
 
         if save_path.exists():
-            flash(f"File with name {file_name} already exists", category="danger")
+            flash(
+                f"File with name {file_name} already exists", category="danger"
+            )
             return render_template("upload_file.html", form=form)
 
         file.save(save_path)
@@ -120,7 +128,8 @@ def upload_file():
 @app.route("/parse/<file_name>")
 @login_required
 def parse_links(file_name: str):
-    """Parse sites from the file and create corresponding records to the database.
+    """Parse sites from the file and create corresponding
+    records to the database.
 
     Args:
         file_name (str): name of the file containing links to parse
@@ -158,10 +167,10 @@ def parse_links(file_name: str):
 
 
 @app.route("/login", methods=["GET", "POST"])
+@user_authenticated
 def login():
     """Flask-Login User login route."""
-    if current_user.is_authenticated:
-        return redirect(url_for("index"))
+
     form = LoginForm(request.form)
     if request.method == "POST" and form.validate():
         user = User.query.filter_by(username=form.username.data).first()
@@ -191,7 +200,9 @@ def register():
     form = RegistrationForm(request.form)
     if request.method == "POST" and form.validate():
         try:
-            user = User(username=form.username.data, password=form.password.data)
+            user = User(
+                username=form.username.data, password=form.password.data
+            )
             user.commit_to_db()
         except IntegrityError:
             flash(
@@ -203,14 +214,17 @@ def register():
             return redirect(url_for("login"))
     for field, error in form.errors.items():
         flash(f"{field.title()}: {error[0]}", category="danger")
-    return render_template("register.html", title="Registration Page", form=form)
+    return render_template(
+        "register.html", title="Registration Page", form=form
+    )
 
 
 @app.route("/logout")
 def logout():
     """User logout route.
 
-    Before logout updates current user last_login field with logout datetime.utcnow.
+    Before logout updates current user last_login field
+    with logout datetime.utcnow.
     """
     user = User.query.filter_by(username=current_user.username).first()
     user.last_login = datetime.utcnow()

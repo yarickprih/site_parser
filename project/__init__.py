@@ -18,12 +18,17 @@ def create_app() -> Flask:
     """Create Flask app factory.
 
     Returns:
-        Flask: initialized Flask application with all extentions connected and config set
+        Flask: initialized Flask application with
+        all extentions connected and config set
     """
     app = Flask(__name__)
     app.config.from_object(config_map[os.getenv("CONFIG", "dev")])
     initialize_extensions(app)
-    return app
+    with app.app_context():
+        from . import routes
+        from .models import Site, User
+
+        return app
 
 
 def initialize_extensions(app: Flask) -> Flask:
@@ -40,8 +45,5 @@ def initialize_extensions(app: Flask) -> Flask:
     login.login_view = "login"
     csrf.init_app(app)
     migrate.init_app(app, db)
-    with app.app_context():
-        from . import routes
-        from .models import Site, User
 
     return app
