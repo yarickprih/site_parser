@@ -5,10 +5,12 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Coroutine,
     Dict,
     Iterator,
     List,
     NoReturn,
+    Optional,
     Tuple,
 )
 
@@ -17,7 +19,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import current_app as app
 
-from .models import Site, User
+from .models import User
 
 
 class RequestConfig:
@@ -34,16 +36,20 @@ class RequestConfig:
     PROXY = "http://142.93.24.89:3128"
 
 
-def parse_links() -> NoReturn:
-    """Parse links from WEBSITES_LIST_URL and writes in to the file.
+def parse_links(url: Optional[str] = None, selector: Optional[str] = None) -> NoReturn:
+    """Parse links from passed url by the css selector
+    and write in into the file.
+
+    Args:
+        url (Optional[str], optional): URL to parse to links from. Defaults to None.
+        selector (Optional[str], optional): CSS selector of links to parse. Defaults to None.
 
     Returns:
-        NoReturn: NoReturn
+        NoReturn
     """
-    selector = "div > table > tbody > tr > td:nth-child(2) > a"
 
     response = requests.get(
-        RequestConfig.WEBSITES_LIST_URL,
+        url or RequestConfig.WEBSITES_LIST_URL,
         headers=RequestConfig.HEADERS,
     )
     soup = BeautifulSoup(response.content, "lxml")
@@ -57,7 +63,7 @@ async def fetch(
     session: aiohttp.ClientSession,
     semaphore: asyncio.Semaphore,
     url: str,
-) -> Tuple[str, Callable[[int], Awaitable[str]], time.time]:
+) -> Tuple[str, Coroutine[Any, Any, bytes], float]:
     """Make an asynchronous request on given URL.
 
     Args:
@@ -66,10 +72,10 @@ async def fetch(
         url (str): URL to make request on
 
     Returns:
-        Tuple[str, Callable[[int], Awaitable[str]], time.time]:
+        Tuple[str, Coroutine[Any, Any, bytes], time.time]:
             url (str): URL that's had been requested
-            result (Callable[[int], Awaitable[str]]): coroutine consisting response data
-            time_ (time.time): Time in took to make a request
+            result Coroutine[Any, Any, bytes]): coroutine containing response data
+            time_ (float): Time in took to make a request
     """
     async with semaphore:
         start = time.perf_counter()
@@ -83,7 +89,7 @@ async def fetch(
 async def crawl(
     file_path: str,
     semaphore: asyncio.Semaphore,
-) -> List[Callable[[int], Awaitable[str]]]:
+) -> List[Callable[[Any], Awaitable[Any]]]:
     """Fetch links from text file with fetch()
     function and returns a list of asyncio coroutines.
 
@@ -104,9 +110,7 @@ async def crawl(
         return tasks
 
 
-def create_site_dict(
-    user: User, url: str, data: str, time_: time.time
-) -> Dict[str, Any]:
+def create_site_dict(user: User, url: str, data: str, time_: float) -> Dict[str, Any]:
     """Create a dictionary of Site model attributes and values
     with passed arguments.
 
@@ -114,7 +118,7 @@ def create_site_dict(
         user (User): SQLAlchemy User model instance
         url (str): URL string
         data (str): URL page body
-        time_ (time.time): Time in took to make a request
+        time_ (float): Time in took to make a request
 
     Returns:
         Dict[str, Any]: dictionary with Site

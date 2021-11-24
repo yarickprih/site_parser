@@ -53,3 +53,6 @@ prune-volumes:
 
 test:
 	pytest -v
+
+lint:
+	pre-commit run --all
