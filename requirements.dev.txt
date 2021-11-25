@@ -15,6 +15,5 @@ pylint-flask==0.6
 pylint==2.11.1
 pytest==6.2.5
 python-dotenv==0.19.1
-python-dotenv==0.19.1
-requests==2.26.0
+aiohttp-retry==2.4.6
 requests==2.26.0

@@ -125,6 +125,18 @@ def upload_file():
     return render_template("upload_file.html", form=form)
 
 
+@app.route("/delete/<file_name>")
+def delete_file(file_name):
+    file_path = get_user_uploads_folder(current_user) / file_name
+    try:
+        file_path.unlink()
+    except OSError as e:
+        flash(f"Error: {file_name} : {e.strerror}", category="danger")
+    else:
+        flash("File has been deleted successfully", category="success")
+    return redirect(url_for("list_user_files"))
+
+
 @app.route("/parse/<file_name>")
 @login_required
 def parse_links(file_name: str):

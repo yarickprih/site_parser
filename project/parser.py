@@ -7,6 +7,7 @@ import aiohttp
 import requests
 from bs4 import BeautifulSoup
 from flask import current_app as app
+from flask import flash
 
 from .models import User
 
@@ -52,7 +53,8 @@ def parse_links(
     )
     soup = BeautifulSoup(response.content, "lxml")
     links = [
-        f"{link['href'].strip()}\n" for link in soup.select(selector=selector)
+        f"{link['href'].strip()}\n"
+        for link in set(soup.select(selector=selector))
     ]
     with open(
         app.config["UPLOADS"] / file_name or app.config["LINKS_FILE"], "a"
@@ -114,9 +116,8 @@ async def crawl(
         connector=aiohttp.TCPConnector(ssl=False)
     ) as session:
         with open(file_path, "r") as file:
-            tasks = [
-                fetch(session, semaphore, url) for url in file.readlines()
-            ]
+            links = set(url for url in file.readlines())
+            tasks = [fetch(session, semaphore, url) for url in links]
         tasks = await asyncio.gather(*tasks)
         return tasks
 
@@ -172,8 +173,17 @@ def create_sites_list(
     asyncio.set_event_loop(loop)
     semaphore = asyncio.Semaphore(500)
     data = loop.run_until_complete(crawl(file_path, semaphore))
+    exceptions_counter = 0
     for item in data:
         if not item:
+            exceptions_counter += 1
             continue
         url, body, time_ = item
         yield create_site_dict(user, url, body, time_)
+    if exceptions_counter:
+        flash(
+            f"{exceptions_counter} site{'s' if exceptions_counter > 2 else ''}\
+                 ha{'ve' if exceptions_counter > 1 else 's'}n't \
+                     been parsed due the connection errors!",
+            category="warning",
+        )

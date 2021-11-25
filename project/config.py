@@ -51,7 +51,7 @@ class TestingConfig(BaseConfig):
     """Testing config class (inherited from BaseConfig)"""
 
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///db.sqlite3"
+    SQLALCHEMY_DATABASE_URI = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     PRESERVE_CONTEXT_ON_EXCEPTION = False
 
 

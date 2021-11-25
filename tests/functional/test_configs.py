@@ -1,11 +1,14 @@
-from project.config import create_db_url
+from project.config import create_db_url, BASE_DIR
 
 
 def test_testing_config(app):
     app.config.from_object("project.config.TestingConfig")
     assert app.config["TESTING"]
     assert app.config["DEBUG"]
-    assert app.config["SQLALCHEMY_DATABASE_URI"] == "sqlite:///db.sqlite3"
+    assert (
+        app.config["SQLALCHEMY_DATABASE_URI"]
+        == f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
+    )
 
 
 def test_development_config(app):
