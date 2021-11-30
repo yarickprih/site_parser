@@ -1,10 +1,15 @@
 import typing as t
 from datetime import datetime
 
+from flask import flash
 from flask_login import UserMixin
+from flask_login.utils import logout_user
+from flask_sqlalchemy import BaseQuery
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from project import db, login
+from project.errors import EmptyQueryError
 
 
 class DBModelMixin:
@@ -81,6 +86,43 @@ class User(db.Model, UserMixin, DBModelMixin):
         """
         return check_password_hash(self.password, password)
 
+    @classmethod
+    def create(cls, **kwargs) -> None:
+        """Create User instance with given parameters.
+
+        Raises:
+            e (IntegrityError): User already exists.
+
+        Returns:
+            None
+        """
+        try:
+            user = cls(**kwargs)
+            user.commit_to_db()
+        except IntegrityError as e:
+            flash(
+                f"User with username '{kwargs['username']}' \
+                    already registered!",
+                category="danger",
+            )
+            raise e
+
+    @classmethod
+    def logout(cls, username: str) -> None:
+        """Logout a user by the username.
+        Additionally update logged out users last_login field.
+
+        Args:
+            username (str): Username of a user to logout.
+
+        Returns:
+            None
+        """
+        user = cls.query.filter_by(username=username).first()
+        user.last_login = datetime.utcnow()
+        user.commit_to_db()
+        logout_user()
+
 
 @login.user_loader
 def load_user(id):
@@ -119,3 +161,54 @@ class Site(db.Model, DBModelMixin):
         db.Integer,
         nullable=False,
     )
+
+    @classmethod
+    def get_by_url(cls, url: str) -> BaseQuery:
+        """Get Site DB records queryset by given url.
+
+        Args:
+            url (str): Site url filter by field
+
+        Raises:
+            EmptyQueryError: No records found
+
+        Returns:
+            BaseQuery: SQLAlchemy queryset containing Site records
+        """
+        obj = cls.query.filter_by(url=url)
+        if not obj.count():
+            raise EmptyQueryError(
+                f"Empty query. Site with url {url} doesn't exist"
+            )
+        return obj
+
+    @classmethod
+    def get_by_user(cls, user: User) -> t.List["Site"]:
+        """Get Site DB records filtered by user field.
+
+        Args:
+            user (User): User instance
+
+        Returns:
+            List[Site]: List of Site instances filtered by passed user field.
+        """
+        return cls.query.filter_by(user=user).all()
+
+    @classmethod
+    def update_or_create(cls, data: t.Dict[str, t.Any]) -> None:
+        """Update existing Site instance, create new one if not exists.
+
+        Args:
+            data (t.Dict[str, t.Any]): [description]
+        """
+        try:
+            cls.get_by_url(data["url"]).update(
+                dict(
+                    user_id=data["user"].id,
+                    scrapping_time=data["scrapping_time"],
+                    created_at=data["created_at"],
+                )
+            )
+        except EmptyQueryError:
+            new_site = cls(**data)
+            db.session.add(new_site)

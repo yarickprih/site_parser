@@ -1,4 +1,6 @@
+import logging
 import os
+from logging.handlers import RotatingFileHandler
 
 from flask import Flask
 from flask_login import LoginManager
@@ -6,7 +8,7 @@ from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 
-from .config import config_map
+from .config import BASE_DIR, config_map
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -22,9 +24,10 @@ def create_app() -> Flask:
         all extentions connected and config set
     """
     app = Flask(__name__)
+    set_logger(app)
     app.config.from_object(config_map[os.getenv("CONFIG", "dev")])
-    initialize_extensions(app)
     with app.app_context():
+        initialize_extensions(app)
         from . import routes
         from .models import Site, User
 
@@ -47,3 +50,17 @@ def initialize_extensions(app: Flask) -> Flask:
     migrate.init_app(app, db)
 
     return app
+
+
+def set_logger(app: Flask) -> None:
+    formatter = logging.Formatter(
+        "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"
+    )
+    handler = RotatingFileHandler(
+        BASE_DIR / "logs.txt",
+        maxBytes=10000000,
+        backupCount=5,
+    )
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter)
+    app.logger.addHandler(handler)

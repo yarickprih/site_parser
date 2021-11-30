@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from flask import current_app as app
 from flask import (
     flash,
@@ -9,20 +7,20 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from flask_login import current_user, login_required, login_user, logout_user
-from sqlalchemy.exc import IntegrityError
+from flask_login import current_user, login_required, login_user
 from werkzeug.utils import secure_filename
-
-from project import db
 
 from .forms import FileUploadForm, LoginForm, RegistrationForm
 from .models import Site, User
-from .parser import create_sites_list
+from .parser import commit_parsed
 from .utils import (
     create_xml_report,
+    flash_form_errors,
     get_user_uploads_folder,
     user_authenticated,
 )
+
+user = current_user
 
 
 @app.route("/")
@@ -36,11 +34,14 @@ def index():
         Template with given context
     """
     sites = Site.query.all()
-    return render_template(
-        "index.html",
-        title="Home Page",
-        sites=sites or None,
-        user=current_user,
+    return (
+        render_template(
+            "index.html",
+            title="Home Page",
+            sites=sites or None,
+            user=current_user,
+        ),
+        200,
     )
 
 
@@ -59,11 +60,14 @@ def links_user_specific(user_name: str):
         Template with given context
     """
     sites = Site.query.filter_by(user=current_user).all()
-    return render_template(
-        "links_list.html",
-        title="Parsed Links",
-        sites=sites or None,
-        user=current_user,
+    return (
+        render_template(
+            "links_list.html",
+            title="Parsed Links",
+            sites=sites or None,
+            user=current_user,
+        ),
+        200,
     )
 
 
@@ -79,11 +83,20 @@ def download():
         Redirect to 'index' route, XML report file.
     """
     sites = Site.query.all()
-    file_name = create_xml_report(sites)
-    return send_from_directory(
-        app.config["FILES_DIR"],
-        file_name,
-        as_attachment=True,
+    try:
+        report = create_xml_report(sites)
+    except ValueError as e:
+        app.logger.error({"error": str(e)})
+        flash(str(e), category="danger")
+        return redirect(request.path), 404
+    print(request.path)
+    return (
+        send_from_directory(
+            app.config["FILES_DIR"],
+            report,
+            as_attachment=True,
+        ),
+        200,
     )
 
 
@@ -92,11 +105,10 @@ def download():
 def list_user_files():
     """List of files uploaded by the user route."""
     files = list(get_user_uploads_folder(current_user).glob("*.txt"))
-    return render_template("files.html", files=files)
+    return render_template("files.html", files=files), 200
 
 
 @app.route("/upload", methods=["GET", "POST"])
-@login_required
 def upload_file():
     """Route for uploading txt files with site urls.
 
@@ -112,16 +124,16 @@ def upload_file():
 
         if save_path.exists():
             flash(
-                f"File with name {file_name} already exists", category="danger"
+                f"File with name {file_name} already exists",
+                category="danger",
             )
-            return render_template("upload_file.html", form=form)
+            return redirect(url_for("upload_file"))
 
         file.save(save_path)
         flash("File uploaded successfully", category="success")
         return redirect(url_for("list_user_files"))
 
-    for field, error in form.errors.items():
-        flash(f"{field.title()}: {error[0]}", category="danger")
+    flash_form_errors(form)
     return render_template("upload_file.html", form=form)
 
 
@@ -131,12 +143,14 @@ def delete_file(file_name):
     try:
         file_path.unlink()
     except OSError as e:
+        app.logger.error({"error": e.strerror})
         flash(f"Error: {file_name} : {e.strerror}", category="danger")
     else:
         flash("File has been deleted successfully", category="success")
     return redirect(url_for("list_user_files"))
 
 
+@app.route("/")
 @app.route("/parse/<file_name>")
 @login_required
 def parse_links(file_name: str):
@@ -149,7 +163,7 @@ def parse_links(file_name: str):
     This route takes a file name as a parameter and searches for that
     file in the current user uploads folder.
     After the file is being processed, created file instances
-    are commited to the database.
+    are committed to the database.
     """
     file_path = get_user_uploads_folder(current_user) / file_name
     if not file_path.exists():
@@ -158,22 +172,10 @@ def parse_links(file_name: str):
             category="danger",
         )
         return redirect(url_for("upload_file"))
-
-    with db.session.no_autoflush:
-        for site in create_sites_list(current_user, file_path):
-            site_to_update = Site.query.filter_by(url=site["url"])
-            if site_to_update.first():
-                site_to_update.update(
-                    dict(
-                        user_id=site["user"].id,
-                        scrapping_time=site["scrapping_time"],
-                        created_at=site["created_at"],
-                    )
-                )
-            else:
-                site_to_create = Site(**site)
-                db.session.add(site_to_create)
-        db.session.commit()
+    commit_parsed(current_user, file_path)
+    # thread = FlaskThread(target=commit_parsed, args=(sites,))
+    # thread.daemon = True
+    # thread.start()
     flash("Sites have been added successfully!", category="success")
     return redirect(url_for("index"))
 
@@ -201,8 +203,7 @@ def login():
                 category="success",
             )
             return redirect("/login?next=" + request.path)
-    for field, error in form.errors.items():
-        flash(f"{field.title()}: {error[0]}", category="danger")
+    flash_form_errors(form)
     return render_template("login.html", title="Login Page", form=form)
 
 
@@ -212,22 +213,20 @@ def register():
     form = RegistrationForm(request.form)
     if request.method == "POST" and form.validate():
         try:
-            user = User(
-                username=form.username.data, password=form.password.data
+            User.create(
+                username=form.username.data,
+                password=form.password.data,
             )
-            user.commit_to_db()
-        except IntegrityError:
-            flash(
-                f"User with username '{user.username}' already registered!",
-                category="danger",
-            )
+        except Exception as e:
+            app.logger.error(str(e))
         else:
             flash("User has been created successfully!", category="success")
             return redirect(url_for("login"))
-    for field, error in form.errors.items():
-        flash(f"{field.title()}: {error[0]}", category="danger")
+    flash_form_errors(form)
     return render_template(
-        "register.html", title="Registration Page", form=form
+        "register.html",
+        title="Registration Page",
+        form=form,
     )
 
 
@@ -238,9 +237,6 @@ def logout():
     Before logout updates current user last_login field
     with logout datetime.utcnow.
     """
-    user = User.query.filter_by(username=current_user.username).first()
-    user.last_login = datetime.utcnow()
-    user.commit_to_db()
-    logout_user()
+    User.logout(current_user.username)
     flash("You've been logged out successfully!", category="warning")
     return redirect(url_for("login"))

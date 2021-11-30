@@ -9,3 +9,4 @@ migrations
 **/*.sqlite3
 .pytest_cache
 uploads
+todo.md

@@ -2,6 +2,7 @@ import asyncio
 import time
 import typing as t
 from datetime import datetime
+from pathlib import PosixPath
 
 import aiohttp
 import requests
@@ -9,7 +10,9 @@ from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask import flash
 
-from .models import User
+from project import db
+
+from .models import Site, User
 
 
 class RequestConfig:
@@ -94,7 +97,12 @@ async def fetch(
                 time_ = end - start
                 result = await response.read()
                 return url, result, time_
-        except Exception:  # TODO Add flash message on url request error
+        except (
+            aiohttp.ClientConnectorError,
+            asyncio.TimeoutError,
+            aiohttp.ServerDisconnectedError,
+        ) as e:
+            app.logger.error({"url": url[:-1], "error": str(e)})
             return None
 
 
@@ -187,3 +195,18 @@ def create_sites_list(
                      been parsed due the connection errors!",
             category="warning",
         )
+
+
+def commit_parsed(user: User, file_path: PosixPath) -> None:
+    """Parse and commit sites to the database.
+    It creates list of asynchronously parsed sites
+    that are committed to the database.
+    Args:
+        user (User): User model instance
+        file_path (PosixPath): path to the file to parse
+    """
+    sites = create_sites_list(user, file_path)
+    for site in sites:
+        app.logger.info(f"Working... {site['url']}")
+        Site.update_or_create(site)
+    db.session.commit()

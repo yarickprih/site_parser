@@ -1,19 +1,32 @@
-from functools import wraps
 import random
 import uuid
 import xml.etree.ElementTree as ET
+from functools import wraps
 from pathlib import Path, PosixPath
+from threading import Thread
 from typing import List
 from xml.dom import minidom
 
 from faker import Faker
 from flask import current_app as app
-from flask import url_for, redirect
+from flask import flash, redirect, url_for
 from flask_login import current_user
 
 from .models import Site, User
 
 fake = Faker()
+
+
+class FlaskThread(Thread):
+    """threading.Thread inherited class with app context passed."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.app = app._get_current_object()
+
+    def run(self):
+        with self.app.app_context():
+            super().run()
 
 
 def create_xml_report(urls: List[Site]) -> str:
@@ -28,6 +41,8 @@ def create_xml_report(urls: List[Site]) -> str:
     Returns:
         str: Created XML report file name
     """
+    if not urls:
+        raise ValueError("Empty urls list")
     root = ET.Element("Catalog")
 
     for url in urls:
@@ -111,6 +126,11 @@ def get_user_uploads_folder(user: User) -> PosixPath:
 
 
 def user_authenticated(func):
+    """Check wether current user is authenticated.
+    If current user is authenticated - redirect to
+    the index page. If not - process route function.
+    """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.is_authenticated:
@@ -118,3 +138,15 @@ def user_authenticated(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def flash_form_errors(form) -> None:
+    """Flash form errors.
+    Flash unprocessed errors that occurred while processing
+    the form.
+
+    Args:
+        form: form instance
+    """
+    for field, error in form.errors.items():
+        flash(f"{field.title()}: {error[0]}", category="danger")
