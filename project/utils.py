@@ -1,12 +1,15 @@
 import random
+import typing as t
 import uuid
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from functools import wraps
 from pathlib import Path, PosixPath
 from threading import Thread
 from typing import List
 from xml.dom import minidom
 
+from bs4 import BeautifulSoup
 from faker import Faker
 from flask import current_app as app
 from flask import flash, redirect, url_for
@@ -69,6 +72,36 @@ def create_xml_report(urls: List[Site]) -> str:
     with open(f"{save_path}/{file_name}", "w") as file:
         file.write(tree)
     return file_name
+
+
+def create_site_dict(
+    user: User, url: str, data: str, time_: float
+) -> t.Dict[str, t.Any]:
+    """Create a dictionary of Site model attributes and values
+    with passed arguments.
+
+    Args:
+        user (User): SQLAlchemy User model instance
+        url (str): URL string
+        data (str): URL page body
+        time_ (float): Time in took to make a request
+
+    Returns:
+        Dict[str, Any]: dictionary with Site
+        model attributes and values
+    """
+    soup = BeautifulSoup(data, "lxml")
+    try:
+        title = soup.select_one("title").text.strip()
+    except AttributeError:
+        title = "Unknown title"
+    return dict(
+        user=user,
+        url=url[:-1],
+        title=title,
+        scrapping_time=int(time_ * 1000),
+        created_at=datetime.utcnow(),
+    )
 
 
 def create_fake_user(instances: int = 1) -> List[User]:

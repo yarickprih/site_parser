@@ -179,12 +179,6 @@ def parse_links(file_name: str):
         )
         return redirect(url_for("upload_file"))
     commit_parsed(current_user, file_path)
-    # thread = FlaskThread(
-    #     target=commit_parsed,
-    #     args=(current_user, file_path),
-    # )
-    # thread.daemon = True
-    # thread.start()
     flash("Sites have been added successfully!", category="success")
     return redirect(url_for("index"))
 

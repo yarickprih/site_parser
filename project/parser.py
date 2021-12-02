@@ -13,6 +13,7 @@ from flask import flash
 from project import db
 
 from .models import Site, User
+from .utils import create_site_dict
 
 
 class RequestConfig:
@@ -124,38 +125,7 @@ async def crawl(
         with open(file_path, "r") as file:
             links = set(url for url in file.readlines())
             tasks = [fetch(session, semaphore, url) for url in links]
-        tasks = await asyncio.gather(*tasks)
-        return tasks
-
-
-def create_site_dict(
-    user: User, url: str, data: str, time_: float
-) -> t.Dict[str, t.Any]:
-    """Create a dictionary of Site model attributes and values
-    with passed arguments.
-
-    Args:
-        user (User): SQLAlchemy User model instance
-        url (str): URL string
-        data (str): URL page body
-        time_ (float): Time in took to make a request
-
-    Returns:
-        Dict[str, Any]: dictionary with Site
-        model attributes and values
-    """
-    soup = BeautifulSoup(data, "lxml")
-    try:
-        title = soup.select_one("title").text.strip()
-    except AttributeError:
-        title = "Unknown title"
-    return dict(
-        user=user,
-        url=url[:-1],
-        title=title,
-        scrapping_time=int(time_ * 1000),
-        created_at=datetime.utcnow(),
-    )
+        return await asyncio.gather(*tasks)
 
 
 def create_sites_list(
