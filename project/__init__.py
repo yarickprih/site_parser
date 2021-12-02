@@ -1,5 +1,4 @@
 import logging
-import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask
@@ -14,24 +13,6 @@ db = SQLAlchemy()
 migrate = Migrate()
 login = LoginManager()
 csrf = CSRFProtect()
-
-
-def create_app() -> Flask:
-    """Create Flask app factory.
-
-    Returns:
-        Flask: initialized Flask application with
-        all extentions connected and config set
-    """
-    app = Flask(__name__)
-    set_logger(app)
-    app.config.from_object(config_map[os.getenv("CONFIG", "dev")])
-    with app.app_context():
-        initialize_extensions(app)
-        from . import routes
-        from .models import Site, User
-
-        return app
 
 
 def initialize_extensions(app: Flask) -> Flask:
@@ -53,6 +34,13 @@ def initialize_extensions(app: Flask) -> Flask:
 
 
 def set_logger(app: Flask) -> None:
+    """Set application logger.
+    Set logger handler, configure logger and assign it
+    to the Flask app.
+
+    Args:
+        app (Flask): Flask app instance
+    """
     formatter = logging.Formatter(
         "[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"
     )
@@ -64,3 +52,25 @@ def set_logger(app: Flask) -> None:
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
     app.logger.addHandler(handler)
+
+
+def create_app(config: str = "dev") -> Flask:
+    """Create Flask app factory.
+
+    Args:
+        config (str, optional): String representation of config_map key
+        referencing config class. Defaults to "dev".
+
+    Returns:
+        Flask: initialized Flask application with
+        all extentions connected and config set
+    """
+    app = Flask(__name__)
+    set_logger(app)
+    app.config.from_object(config_map[config])
+    initialize_extensions(app)
+    with app.app_context():
+        from . import routes
+        from .models import Site, User
+
+    return app

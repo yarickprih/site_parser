@@ -35,20 +35,33 @@ class BaseConfig:
 
 
 class ProductionConfig(BaseConfig):
-    """Production config class (inherited from BaseConfig)"""
+    """Production config class.
+
+    Args:
+        BaseConfig: Base config object
+    """
 
     DEBUG = False
 
 
 class DevelopmentConfig(BaseConfig):
-    """Development config class (inherited from BaseConfig)"""
+    """Development config class.
+
+    Args:
+        BaseConfig: Base config object
+    """
 
     DEBUG = True
     TESTING = False
 
 
 class TestingConfig(BaseConfig):
-    """Testing config class (inherited from BaseConfig)"""
+    """Testing config class.
+
+
+    Args:
+        BaseConfig: Base config object
+    """
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"

@@ -33,25 +33,26 @@ class RequestConfig:
 
 
 def parse_links(
-    url: t.Optional[str] = None,
-    selector: t.Optional[str] = None,
-    file_name: str = None,
+    url: t.Optional[str] = RequestConfig.WEBSITES_LIST_URL,
+    selector: t.Optional[str] = "a",
+    file_name: str = app.config["LINKS_FILE"],
 ) -> t.NoReturn:
     """Parse links from passed url by the css selector
     and write in into the file.
 
     Args:
-        url (Optional[str], optional): URL to parse to links from.
-        Defaults to None.
-        selector (Optional[str], optional): CSS selector of links to parse.
-        Defaults to None.
+        url (t.Optional[str], optional): URL to parse to links from.
+            Defaults to RequestConfig.WEBSITES_LIST_URL.
+        selector (t.Optional[str], optional): CSS selector of links to parse.
+            Defaults to "a".
+        file_name (str, optional): File name to save parsed links.
+            Defaults to app.config["LINKS_FILE"].
 
     Returns:
         NoReturn
     """
-
     response = requests.get(
-        url or RequestConfig.WEBSITES_LIST_URL,
+        url,
         headers=RequestConfig.HEADERS,
     )
     soup = BeautifulSoup(response.content, "lxml")
@@ -59,9 +60,7 @@ def parse_links(
         f"{link['href'].strip()}\n"
         for link in set(soup.select(selector=selector))
     ]
-    with open(
-        app.config["UPLOADS"] / file_name or app.config["LINKS_FILE"], "a"
-    ) as file:
+    with open(app.config["UPLOADS"] / file_name, "a") as file:
         for link in links:
             file.write(link)
 
@@ -103,7 +102,6 @@ async def fetch(
             aiohttp.ServerDisconnectedError,
         ) as e:
             app.logger.error({"url": url[:-1], "error": str(e)})
-            return None
 
 
 async def crawl(

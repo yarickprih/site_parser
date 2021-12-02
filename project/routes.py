@@ -20,8 +20,6 @@ from .utils import (
     user_authenticated,
 )
 
-user = current_user
-
 
 @app.route("/")
 @login_required
@@ -108,16 +106,24 @@ def list_user_files():
     return render_template("files.html", files=files), 200
 
 
-@app.route("/upload", methods=["GET", "POST"])
-def upload_file():
+@app.route("/upload", methods=["GET"])
+@login_required
+def upload_file_view():
     """Route for uploading txt files with site urls.
 
     Files uploaded with this route would be saved to the folder
     assigned to UPLOADS config variable truncating a folder for
     specific user."""
     form = FileUploadForm()
+    return render_template("upload_file.html", title="Upload File", form=form)
 
+
+@app.route("/upload", methods=["POST"])
+@login_required
+def upload_file():
+    form = FileUploadForm()
     if form.validate_on_submit():
+
         file = form.document.data
         file_name = secure_filename(file.filename)
         save_path = get_user_uploads_folder(current_user) / file_name
@@ -134,23 +140,23 @@ def upload_file():
         return redirect(url_for("list_user_files"))
 
     flash_form_errors(form)
-    return render_template("upload_file.html", form=form)
+    return redirect(url_for("upload_file_view"))
 
 
 @app.route("/delete/<file_name>")
+@login_required
 def delete_file(file_name):
     file_path = get_user_uploads_folder(current_user) / file_name
     try:
         file_path.unlink()
     except OSError as e:
         app.logger.error({"error": e.strerror})
-        flash(f"Error: {file_name} : {e.strerror}", category="danger")
+        flash(f"Error! {e.strerror}: {file_name}", category="danger")
     else:
         flash("File has been deleted successfully", category="success")
     return redirect(url_for("list_user_files"))
 
 
-@app.route("/")
 @app.route("/parse/<file_name>")
 @login_required
 def parse_links(file_name: str):
@@ -173,27 +179,36 @@ def parse_links(file_name: str):
         )
         return redirect(url_for("upload_file"))
     commit_parsed(current_user, file_path)
-    # thread = FlaskThread(target=commit_parsed, args=(sites,))
+    # thread = FlaskThread(
+    #     target=commit_parsed,
+    #     args=(current_user, file_path),
+    # )
     # thread.daemon = True
     # thread.start()
     flash("Sites have been added successfully!", category="success")
     return redirect(url_for("index"))
 
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET"])
 @user_authenticated
-def login():
+def login_view():
     """Flask-Login User login route."""
 
-    form = LoginForm(request.form)
-    if request.method == "POST" and form.validate():
+    form = LoginForm()
+    return render_template("login.html", title="Login Page", form=form)
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if not user:
             flash(
                 f"User with username '{form.username.data}' doesn't exists!",
                 category="danger",
             )
-            return render_template("login.html", title="Login Page", form=form)
+            return redirect(url_for("login_view"))
         if not user.check_password(form.password.data):
             flash("Incorrect password!", category="danger")
         else:
@@ -204,14 +219,25 @@ def login():
             )
             return redirect("/login?next=" + request.path)
     flash_form_errors(form)
-    return render_template("login.html", title="Login Page", form=form)
+    return redirect(url_for("login_view"))
 
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
+@app.route("/register", methods=["GET"])
+def register_view():
     """User registration route."""
-    form = RegistrationForm(request.form)
-    if request.method == "POST" and form.validate():
+    form = RegistrationForm()
+
+    return render_template(
+        "register.html",
+        title="Registration Page",
+        form=form,
+    )
+
+
+@app.route("/register", methods=["POST"])
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
         try:
             User.create(
                 username=form.username.data,
@@ -223,11 +249,7 @@ def register():
             flash("User has been created successfully!", category="success")
             return redirect(url_for("login"))
     flash_form_errors(form)
-    return render_template(
-        "register.html",
-        title="Registration Page",
-        form=form,
-    )
+    return redirect(url_for("register_view"))
 
 
 @app.route("/logout")

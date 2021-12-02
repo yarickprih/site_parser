@@ -18,13 +18,16 @@ stop:
 start:
 	sudo docker-compose start $(service)
 
-run:
-	sudo docker-compose up -d --build --remove-orphans
+build:
+	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 sudo docker-compose build
+
+run: build
+	sudo docker-compose up -d --remove-orphans
 
 down:
 	sudo docker-compose down --remove-orphans
 
-reload: down
+reload: down build
 	sudo docker-compose up -d --build --remove-orphans
 
 logs:
@@ -52,7 +55,7 @@ prune-volumes:
 	sudo docker volume prune --force
 
 test:
-	pytest -v
+	pytest -v -s
 
 lint:
 	pre-commit run --all

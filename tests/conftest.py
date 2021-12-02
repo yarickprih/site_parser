@@ -1,11 +1,13 @@
 import pytest
+from flask.testing import FlaskClient
 from project import create_app, db
+
+pytest_plugins = ["tests.fixtures"]
 
 
 @pytest.fixture(scope="module")
 def app():
-    app = create_app()
-    app.config.from_object("project.config.TestingConfig")
+    app = create_app(config="test")
     with app.app_context():
         yield app
 
