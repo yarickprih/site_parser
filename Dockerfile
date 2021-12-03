@@ -9,7 +9,6 @@ ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update && apt-get install -y netcat
 
-
 RUN pip install --upgrade pip
 COPY ./requirements.dev.txt $APP_HOME/requirements.txt
 RUN pip install -r requirements.txt

@@ -1,3 +1,5 @@
+# import redis
+from flask import Blueprint
 from flask import current_app as app
 from flask import (
     flash,
@@ -8,6 +10,8 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required, login_user
+
+# from rq import Queue
 from werkzeug.utils import secure_filename
 
 from .forms import FileUploadForm, LoginForm, RegistrationForm
@@ -20,8 +24,18 @@ from .utils import (
     user_authenticated,
 )
 
+main_blueprint = Blueprint(
+    "main_app",
+    __name__,
+    template_folder="templates",
+)
 
-@app.route("/")
+
+# r = redis.Redis(host="redis", port=6379, decode_responses=True)
+# q = Queue(connection=r)
+
+
+@main_blueprint.route("/")
 @login_required
 def index():
     """Index application route.
@@ -43,7 +57,7 @@ def index():
     )
 
 
-@app.route("/<user_name>")
+@main_blueprint.route("/<user_name>")
 @login_required
 def links_user_specific(user_name: str):
     """Sites filtered by current user.
@@ -69,7 +83,7 @@ def links_user_specific(user_name: str):
     )
 
 
-@app.route("/download")
+@main_blueprint.route("/download")
 @login_required
 def download():
     """Download XML report route.
@@ -98,7 +112,7 @@ def download():
     )
 
 
-@app.route("/files")
+@main_blueprint.route("/files")
 @login_required
 def list_user_files():
     """List of files uploaded by the user route."""
@@ -106,7 +120,7 @@ def list_user_files():
     return render_template("files.html", files=files), 200
 
 
-@app.route("/upload", methods=["GET"])
+@main_blueprint.route("/upload", methods=["GET"])
 @login_required
 def upload_file_view():
     """Route for uploading txt files with site urls.
@@ -118,7 +132,7 @@ def upload_file_view():
     return render_template("upload_file.html", title="Upload File", form=form)
 
 
-@app.route("/upload", methods=["POST"])
+@main_blueprint.route("/upload", methods=["POST"])
 @login_required
 def upload_file():
     form = FileUploadForm()
@@ -133,17 +147,17 @@ def upload_file():
                 f"File with name {file_name} already exists",
                 category="danger",
             )
-            return redirect(url_for("upload_file"))
+            return redirect(url_for("main_app.upload_file"))
 
         file.save(save_path)
         flash("File uploaded successfully", category="success")
-        return redirect(url_for("list_user_files"))
+        return redirect(url_for("main_app.list_user_files"))
 
     flash_form_errors(form)
-    return redirect(url_for("upload_file_view"))
+    return redirect(url_for("main_app.upload_file_view"))
 
 
-@app.route("/delete/<file_name>")
+@main_blueprint.route("/delete/<file_name>")
 @login_required
 def delete_file(file_name):
     file_path = get_user_uploads_folder(current_user) / file_name
@@ -154,10 +168,10 @@ def delete_file(file_name):
         flash(f"Error! {e.strerror}: {file_name}", category="danger")
     else:
         flash("File has been deleted successfully", category="success")
-    return redirect(url_for("list_user_files"))
+    return redirect(url_for("main_app.list_user_files"))
 
 
-@app.route("/parse/<file_name>")
+@main_blueprint.route("/parse/<file_name>")
 @login_required
 def parse_links(file_name: str):
     """Parse sites from the file and create corresponding
@@ -177,13 +191,14 @@ def parse_links(file_name: str):
             f"File {file_name} doesn't exist. You have to upload it first",
             category="danger",
         )
-        return redirect(url_for("upload_file"))
-    commit_parsed(current_user, file_path)
+        return redirect(url_for("main_app.upload_file"))
+    user = User.query.filter_by(id=current_user.id).first()
+    commit_parsed(user, file_path)
     flash("Sites have been added successfully!", category="success")
-    return redirect(url_for("index"))
+    return redirect(url_for("main_app.index"))
 
 
-@app.route("/login", methods=["GET"])
+@main_blueprint.route("/login", methods=["GET"])
 @user_authenticated
 def login_view():
     """Flask-Login User login route."""
@@ -192,7 +207,7 @@ def login_view():
     return render_template("login.html", title="Login Page", form=form)
 
 
-@app.route("/login", methods=["POST"])
+@main_blueprint.route("/login", methods=["POST"])
 def login():
     form = LoginForm()
     if form.validate_on_submit():
@@ -202,7 +217,7 @@ def login():
                 f"User with username '{form.username.data}' doesn't exists!",
                 category="danger",
             )
-            return redirect(url_for("login_view"))
+            return redirect(url_for("main_app.login_view"))
         if not user.check_password(form.password.data):
             flash("Incorrect password!", category="danger")
         else:
@@ -213,10 +228,10 @@ def login():
             )
             return redirect("/login?next=" + request.path)
     flash_form_errors(form)
-    return redirect(url_for("login_view"))
+    return redirect(url_for("main_app.login_view"))
 
 
-@app.route("/register", methods=["GET"])
+@main_blueprint.route("/register", methods=["GET"])
 def register_view():
     """User registration route."""
     form = RegistrationForm()
@@ -228,7 +243,7 @@ def register_view():
     )
 
 
-@app.route("/register", methods=["POST"])
+@main_blueprint.route("/register", methods=["POST"])
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
@@ -241,12 +256,12 @@ def register():
             app.logger.error(str(e))
         else:
             flash("User has been created successfully!", category="success")
-            return redirect(url_for("login"))
+            return redirect(url_for("main_app.login"))
     flash_form_errors(form)
-    return redirect(url_for("register_view"))
+    return redirect(url_for("main_app.register_view"))
 
 
-@app.route("/logout")
+@main_blueprint.route("/logout")
 def logout():
     """User logout route.
 
@@ -255,4 +270,4 @@ def logout():
     """
     User.logout(current_user.username)
     flash("You've been logged out successfully!", category="warning")
-    return redirect(url_for("login"))
+    return redirect(url_for("main_app.login"))

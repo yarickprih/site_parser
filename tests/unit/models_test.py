@@ -1,8 +1,7 @@
 import pytest
 from werkzeug.security import check_password_hash
-from project.errors import EmptyQueryError
-from project.models import Site, User
-from project.utils import create_fake_site
+from project.main.errors import EmptyQueryError
+from project.main.models import Site
 
 
 class TestUser:

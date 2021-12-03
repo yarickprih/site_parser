@@ -1,5 +1,6 @@
 aiohttp==3.8.1
 aiohttp-retry==2.4.6
+backoff==1.11.1
 beautifulsoup4==4.10.0
 black==21.10b0
 Faker==9.8.1
@@ -16,4 +17,6 @@ pylint-flask==0.6
 pylint-flask-sqlalchemy==0.2.0
 pytest==6.2.5
 python-dotenv==0.19.1
+redis==4.0.2
 requests==2.26.0
+rq==1.10.0

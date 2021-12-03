@@ -1,15 +1,15 @@
 import asyncio
+import json
 import time
 import typing as t
-from datetime import datetime
 from pathlib import PosixPath
 
 import aiohttp
+import backoff
 import requests
 from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask import flash
-
 from project import db
 
 from .models import Site, User
@@ -22,15 +22,14 @@ class RequestConfig:
     WEBSITES_LIST_URL = "https://trends.netcraft.com/topsites"
     HEADERS = {
         "cache-control": "max-age=0",
-        "user-agent": (
-            "Mozilla/5.0 (Linux; Android 11; SM-G960U) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/89.0.4389.72 Mobile Safari/537.36"
-        ),
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image\
             /avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;\
                 v=b3;q=0.9",
+        "accept-encoding": "gzip, deflate",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) \
+            AppleWebKit/605.1.15 (KHTML, like Gecko) \
+                Version/13.1.1 Safari/605.1.15",
     }
-    PROXY = "http://142.93.24.89:3128"
 
 
 def parse_links(
@@ -66,6 +65,18 @@ def parse_links(
             file.write(link)
 
 
+@backoff.on_exception(
+    backoff.expo,
+    aiohttp.ClientResponseError,
+    max_tries=3,
+    max_time=30,
+)
+@backoff.on_exception(
+    backoff.expo,
+    asyncio.TimeoutError,
+    max_tries=3,
+    max_time=50,
+)
 async def fetch(
     session: aiohttp.ClientSession,
     semaphore: asyncio.Semaphore,
@@ -91,18 +102,57 @@ async def fetch(
             async with session.get(
                 url,
                 headers=RequestConfig.HEADERS,
-                timeout=10,
+                raise_for_status=True,
+                timeout=30,
             ) as response:
                 end = time.perf_counter()
                 time_ = end - start
                 result = await response.read()
                 return url, result, time_
         except (
-            aiohttp.ClientConnectorError,
-            asyncio.TimeoutError,
             aiohttp.ServerDisconnectedError,
+            asyncio.TimeoutError,
         ) as e:
-            app.logger.error({"url": url[:-1], "error": str(e)})
+            app.logger.error(
+                {
+                    "url": url,
+                    "error": e.__class__.__name__,
+                    "message": e,
+                }
+            )
+        except aiohttp.ClientConnectorError as e:
+            app.logger.error(
+                json.dumps(
+                    {
+                        "url": url,
+                        "error": e.__class__.__name__,
+                        "host": e.host,
+                        "port": e.port,
+                        "message": e.strerror,
+                    },
+                    indent=4,
+                )
+            )
+        except aiohttp.ClientResponseError as e:
+            app.logger.error(
+                json.dumps(
+                    {
+                        "url": url,
+                        "error": e.__class__.__name__,
+                        "status_code": e.status,
+                        "message": e.message,
+                    },
+                    indent=4,
+                )
+            )
+        except Exception as e:
+            app.logger.error(
+                {
+                    "url": url,
+                    "error": e.__class__.__name__,
+                    "message": str(e),
+                }
+            )
 
 
 async def crawl(
@@ -123,7 +173,7 @@ async def crawl(
         connector=aiohttp.TCPConnector(ssl=False)
     ) as session:
         with open(file_path, "r") as file:
-            links = set(url for url in file.readlines())
+            links = set(url[:-1] for url in file.readlines())
             tasks = [fetch(session, semaphore, url) for url in links]
         return await asyncio.gather(*tasks)
 
@@ -147,7 +197,7 @@ def create_sites_list(
     """
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    semaphore = asyncio.Semaphore(500)
+    semaphore = asyncio.BoundedSemaphore(500)
     data = loop.run_until_complete(crawl(file_path, semaphore))
     exceptions_counter = 0
     for item in data:

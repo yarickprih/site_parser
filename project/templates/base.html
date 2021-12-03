@@ -17,20 +17,21 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-end">
                     {% if current_user.is_authenticated %}
                     <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
-                        <li><a href="{{ url_for('index') }}" class="nav-link px-2">Home</a></li>
-                        <li><a href="{{ url_for('links_user_specific', user_name=current_user.username) }}"
+                        <li><a href="{{ url_for('main_app.index') }}" class="nav-link px-2">Home</a></li>
+                        <li><a href="{{ url_for('main_app.links_user_specific', user_name=current_user.username) }}"
                                 class="nav-link px-2">Parsed by me</a></li>
-                        <li><a href="{{ url_for('upload_file_view') }}" class="nav-link px-2">Upload file</a></li>
-                        <li><a href="{{ url_for('list_user_files') }}" class="nav-link px-2">Files</a></li>
+                        <li><a href="{{ url_for('main_app.upload_file_view') }}" class="nav-link px-2">Upload file</a>
+                        </li>
+                        <li><a href="{{ url_for('main_app.list_user_files') }}" class="nav-link px-2">Files</a></li>
                     </ul>
                     {% endif %}
                     <div class="d-flex flex-row align-items-center justify-content-center">
                         {% if current_user.is_authenticated %}
                         <p class="my-0 mx-3">Hi, {{ current_user.username }}!</p>
-                        <a class="btn btn-warning" href="{{ url_for('logout') }}">Logout</a>
+                        <a class="btn btn-warning" href="{{ url_for('main_app.logout') }}">Logout</a>
                         {% else %}
-                        <a class="btn btn-outline-light me-2" href="{{ url_for('login_view') }}">Login</a>
-                        <a class="btn btn-warning" href="{{ url_for('register_view') }}">Sign-up</a>
+                        <a class="btn btn-outline-light me-2" href="{{ url_for('main_app.login_view') }}">Login</a>
+                        <a class="btn btn-warning" href="{{ url_for('main_app.register_view') }}">Sign-up</a>
                         {% endif %}
                     </div>
                 </div>

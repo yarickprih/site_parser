@@ -167,7 +167,7 @@ def user_authenticated(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.is_authenticated:
-            return redirect(url_for("index"))
+            return redirect(url_for("main_app.index"))
         return func(*args, **kwargs)
 
     return wrapper

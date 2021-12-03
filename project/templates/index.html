@@ -7,7 +7,7 @@
     {% include "utils/messages.html" %}
   </div>
   {% if sites %}
-  <a href="{{ url_for('download') }}" class="btn btn-success text-end my-3">Download XML Report</a>
+  <a href="{{ url_for('main_app.download') }}" class="btn btn-success text-end my-3">Download XML Report</a>
   {% include "utils/statistics_table.html" %}
   {% else %}
   <h4 class="mt-3 text-center">No sites in database yet</h4>

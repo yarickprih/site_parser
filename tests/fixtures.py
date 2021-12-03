@@ -2,8 +2,8 @@ import random
 
 import pytest
 from faker import Faker
-from project.models import Site, User
-from project.utils import create_fake_user
+from project.main.models import Site, User
+from project.main.utils import create_fake_user
 
 fake = Faker()
 

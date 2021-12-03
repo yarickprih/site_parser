@@ -5,11 +5,11 @@ from flask import flash
 from flask_login import UserMixin
 from flask_login.utils import logout_user
 from flask_sqlalchemy import BaseQuery
-from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
-
+from sqlalchemy.exc import IntegrityError
 from project import db, login
-from project.errors import EmptyQueryError
+
+from .errors import EmptyQueryError
 
 
 class DBModelMixin:

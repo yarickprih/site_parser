@@ -4,7 +4,7 @@
 {% block content %}
 <div class="text-center mt-3 d-flex justify-content-center">
     <main class="form-signin">
-        <form method="post" enctype="multipart/form-data" action="{{ url_for('upload_file') }}">
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('main_app.upload_file') }}">
             {{ form.csrf_token }}
             <h1 class="h3 mb-3 fw-normal">Upload site list file</h1>
             {% include "./utils/messages.html" %}

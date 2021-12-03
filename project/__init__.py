@@ -26,11 +26,17 @@ def initialize_extensions(app: Flask) -> Flask:
     """
     db.init_app(app)
     login.init_app(app)
-    login.login_view = "login"
+    login.login_view = "login_view"
     csrf.init_app(app)
     migrate.init_app(app, db)
 
     return app
+
+
+def register_blueprints(app: Flask) -> None:
+    from .main.routes import main_blueprint
+
+    app.register_blueprint(main_blueprint)
 
 
 def set_logger(app: Flask) -> None:
@@ -66,11 +72,9 @@ def create_app(config: str = "dev") -> Flask:
         all extentions connected and config set
     """
     app = Flask(__name__)
-    set_logger(app)
     app.config.from_object(config_map[config])
+    set_logger(app)
     initialize_extensions(app)
     with app.app_context():
-        from . import routes
-        from .models import Site, User
-
+        register_blueprints(app)
     return app
