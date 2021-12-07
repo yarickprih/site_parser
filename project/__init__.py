@@ -26,7 +26,7 @@ def initialize_extensions(app: Flask) -> Flask:
     """
     db.init_app(app)
     login.init_app(app)
-    login.login_view = "login_view"
+    login.login_view = "main_app.login_view"
     csrf.init_app(app)
     migrate.init_app(app, db)
 

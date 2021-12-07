@@ -100,8 +100,7 @@ def download():
     except ValueError as e:
         app.logger.error({"error": str(e)})
         flash(str(e), category="danger")
-        return redirect(request.path), 404
-    print(request.path)
+        return redirect(url_for("main_app.download")), 404
     return (
         send_from_directory(
             app.config["FILES_DIR"],
@@ -226,7 +225,7 @@ def login():
                 "User has been authenticated successfully!",
                 category="success",
             )
-            return redirect("/login?next=" + request.path)
+            return redirect(url_for("main_app.index"))
     flash_form_errors(form)
     return redirect(url_for("main_app.login_view"))
 
@@ -254,6 +253,11 @@ def register():
             )
         except Exception as e:
             app.logger.error(str(e))
+            flash(
+                f"User with username '{form.username.data}' \
+                    already registered!",
+                category="danger",
+            )
         else:
             flash("User has been created successfully!", category="success")
             return redirect(url_for("main_app.login"))

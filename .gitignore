@@ -10,3 +10,4 @@ migrations
 .pytest_cache
 uploads
 todo.md
+.coverage

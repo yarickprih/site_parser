@@ -20,18 +20,6 @@ from .models import Site, User
 fake = Faker()
 
 
-class FlaskThread(Thread):
-    """threading.Thread inherited class with app context passed."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.app = app._get_current_object()
-
-    def run(self):
-        with self.app.app_context():
-            super().run()
-
-
 def create_xml_report(urls: List[Site]) -> str:
     """Create an XML report file.
 

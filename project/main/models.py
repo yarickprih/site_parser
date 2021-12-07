@@ -100,11 +100,6 @@ class User(db.Model, UserMixin, DBModelMixin):
             user = cls(**kwargs)
             user.commit_to_db()
         except IntegrityError as e:
-            flash(
-                f"User with username '{kwargs['username']}' \
-                    already registered!",
-                category="danger",
-            )
             raise e
 
     @classmethod

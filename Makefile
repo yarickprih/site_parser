@@ -57,5 +57,8 @@ prune-volumes:
 test:
 	pytest -v -s
 
+cov:
+	pytest --cov=project
+
 lint:
 	pre-commit run --all

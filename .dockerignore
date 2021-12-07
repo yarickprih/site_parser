@@ -10,3 +10,4 @@ migrations
 .dockerignore
 links*
 todo.md
+.coverage

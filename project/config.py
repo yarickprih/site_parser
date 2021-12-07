@@ -66,6 +66,7 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     PRESERVE_CONTEXT_ON_EXCEPTION = False
+    WTF_CSRF_ENABLED = False
 
 
 config_map = {
