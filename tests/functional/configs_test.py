@@ -9,6 +9,7 @@ def test_testing_config(app):
         app.config["SQLALCHEMY_DATABASE_URI"]
         == f"sqlite:///{BASE_DIR / 'db.sqlite3'}"
     )
+    assert not app.config["WTF_CSRF_ENABLED"]
 
 
 def test_development_config(app):

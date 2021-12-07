@@ -12,7 +12,7 @@ fake = Faker()
 
 @pytest.fixture(scope="module")
 def test_all_sites(test_database):
-    return Site.query.all()
+    yield Site.query.all()
 
 
 @pytest.fixture(scope="module")
